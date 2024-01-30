@@ -60,18 +60,17 @@ theorem chapter1_question4 (v : Word (Fin 2)) (hv : HasOverlap v)
   apply Exists.intro <| μ B
   apply And.intro
   · exact μ_nonerasing B hBl
-  · have h₁ := FreeMonoid.is_infix_congr hBr μ
-    simp only [map_mul] at h₁
-    have h₂ : μ B * μ B * (μ B).take 1 <*: μ B * μ B * μ (B.take 1) := by
+  · have : μ B * μ B * (μ B).take 1 <*: μ B * μ B * μ (B.take 1) := by
+      apply (List.prefix_append_right_inj (μ B * μ B)).mpr
       cases B with
       | nil => contradiction
       | cons x xs =>
-        apply (List.prefix_append_right_inj (μ (x :: xs) * μ (x :: xs))).mpr
-        conv => lhs; change FreeMonoid.toList (FreeMonoid.take 1 (μ (FreeMonoid.ofList (x :: xs))))
+        conv => lhs; change (μ (FreeMonoid.ofList (x :: xs))).take 1
         rw [FreeMonoid.ofList_cons, map_mul]
-        simp only [FreeMonoid.ofList_cons, map_mul, FreeMonoid.mul_eq_list_append, FreeMonoid.toList', FreeMonoid.take_eq_list_take,
-          List.take_cons_succ, List.take_zero, FreeMonoid.is_prefix_iff_list_is_prefix]
-        rw [List.take_append_of_le_length] <;> fin_cases x <;> decide
-    have h₃ := List.IsPrefix.isInfix h₂
-    apply List.IsInfix.trans h₃
-    exact h₁
+        simp only [freemonoid_to_list, List.take_cons_succ, List.take_zero]
+        rw [List.take_append_of_le_length]
+        · fin_cases x <;> decide
+        · fin_cases x <;> decide
+    apply List.IsInfix.trans (List.IsPrefix.isInfix this)
+    simp only [← map_mul]
+    exact FreeMonoid.is_infix_congr hBr μ
