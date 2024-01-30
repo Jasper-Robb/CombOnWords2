@@ -8,6 +8,17 @@ variable {α : Type*} [Fintype α]
 def Overlap (w : Word α) : Prop :=
   ∃ (B : Word α), 0 < |B| ∧ w = B * B * B.take 1
 
+def HasOverlap (w : Word α) : Prop :=
+  ∃ (B : Word α), 0 < |B| ∧ B * B * B.take 1 <:*: w
+
+def μ : Monoid.End (Word (Fin 2)) := 
+  FreeMonoid.join ∘* FreeMonoid.map (fun x => if x = 0 then [0, 1] else [1, 0])
+
+theorem μ_nonerasing : FreeMonoid.NonErasing μ := by
+  apply FreeMonoid.join_map_nonerasing
+  intro x
+  fin_cases x <;> exact Nat.succ_pos 1
+
 theorem chapter1_question2 (u : Word α) (hu : Overlap u)
     : ∃ (v w z : Word α), u = w * v ∧ u = z * w ∧ |w| > |v| := by
   rcases hu with ⟨B, hBl, hBr⟩
@@ -42,3 +53,25 @@ theorem chapter1_question3 (u : Word α) (hu : Overlap u)
     · simpa [freemonoid_to_list] using Nat.lt_of_le_of_ne hBr h.symm
     · conv => rhs; lhs; rw [mul_assoc]
       simpa only [freemonoid_to_list, List.take_append_drop]
+
+theorem chapter1_question4 (v : Word (Fin 2)) (hv : HasOverlap v)
+    : HasOverlap (μ v) := by
+  rcases hv with ⟨B, hBl, hBr⟩
+  apply Exists.intro <| μ B
+  apply And.intro
+  · exact μ_nonerasing B hBl
+  · have h₁ := FreeMonoid.is_infix_congr hBr μ
+    simp only [map_mul] at h₁
+    have h₂ : μ B * μ B * (μ B).take 1 <*: μ B * μ B * μ (B.take 1) := by
+      cases B with
+      | nil => contradiction
+      | cons x xs =>
+        apply (List.prefix_append_right_inj (μ (x :: xs) * μ (x :: xs))).mpr
+        conv => lhs; change FreeMonoid.toList (FreeMonoid.take 1 (μ (FreeMonoid.ofList (x :: xs))))
+        rw [FreeMonoid.ofList_cons, map_mul]
+        simp only [FreeMonoid.ofList_cons, map_mul, FreeMonoid.mul_eq_list_append, FreeMonoid.toList', FreeMonoid.take_eq_list_take,
+          List.take_cons_succ, List.take_zero, FreeMonoid.is_prefix_iff_list_is_prefix]
+        rw [List.take_append_of_le_length] <;> fin_cases x <;> decide
+    have h₃ := List.IsPrefix.isInfix h₂
+    apply List.IsInfix.trans h₃
+    exact h₁
