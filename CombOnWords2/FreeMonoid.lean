@@ -97,22 +97,21 @@ theorem is_infix_iff_list_is_infix (fm₁ fm₂ : FreeMonoid α)
 theorem is_prefix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <*: fm₂) (f : FreeMonoid α →* FreeMonoid β)
     : (f fm₁) <*: (f fm₂) := by
   rcases h with ⟨t, _⟩
-  apply Exists.intro <| f t
+  exists f t
   rw [← map_mul]
   congr
 
 theorem is_suffix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <:* fm₂) (f : FreeMonoid α →* FreeMonoid β)
     : (f fm₁) <:* (f fm₂) := by
   rcases h with ⟨s, _⟩
-  apply Exists.intro <| f s
+  exists f s
   rw [← map_mul]
   congr
 
 theorem is_infix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <:*: fm₂) (f : FreeMonoid α →* FreeMonoid β)
     : (f fm₁) <:*: (f fm₂) := by
   rcases h with ⟨s, t, _⟩
-  apply Exists.intro <| f s
-  apply Exists.intro <| f t
+  exists f s, f t
   repeat rw [← map_mul]
   congr
 

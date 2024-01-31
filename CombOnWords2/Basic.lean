@@ -22,9 +22,7 @@ theorem μ_nonerasing : FreeMonoid.NonErasing μ := by
 theorem chapter1_question2 (u : Word α) (hu : Overlap u)
     : ∃ (v w z : Word α), u = w * v ∧ u = z * w ∧ |w| > |v| := by
   rcases hu with ⟨B, hBl, hBr⟩
-  apply Exists.intro <| B.drop 1 * B.take 1
-  apply Exists.intro <| B * B.take 1
-  apply Exists.intro <| B
+  exists (B.drop 1 * B.take 1), (B * B.take 1), B
   apply And.intro
   · conv => rw [← mul_assoc]; rhs; lhs; rw [mul_assoc]
     simpa only [freemonoid_to_list, List.take_append_drop]
@@ -39,14 +37,13 @@ theorem chapter1_question3 (u : Word α) (hu : Overlap u)
   cases eq_or_ne |B| 1 with
   | inl h =>
     apply Or.inl
-    apply Exists.intro B
+    exists B
     apply And.intro
     · exact hBr
     · simpa [hBl] using List.take_length_le <| Nat.le_of_eq h
   | inr h =>
     apply Or.inr
-    apply Exists.intro <| B.take 1
-    apply Exists.intro <| B.drop 1
+    exists (B.take 1), (B.drop 1)
     apply And.intro
     · simpa [freemonoid_to_list]
     apply And.intro
@@ -57,7 +54,7 @@ theorem chapter1_question3 (u : Word α) (hu : Overlap u)
 theorem chapter1_question4 (v : Word (Fin 2)) (hv : HasOverlap v)
     : HasOverlap (μ v) := by
   rcases hv with ⟨B, hBl, hBr⟩
-  apply Exists.intro <| μ B
+  exists μ B
   apply And.intro
   · exact μ_nonerasing B hBl
   · have : μ B * μ B * (μ B).take 1 <*: μ B * μ B * μ (B.take 1) := by
