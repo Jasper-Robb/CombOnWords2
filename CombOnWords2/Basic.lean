@@ -72,5 +72,4 @@ theorem chapter1_question4 (v : Word (Fin 2)) (hv : HasOverlap v)
         · fin_cases x <;> decide
         · fin_cases x <;> decide
     apply List.IsInfix.trans (List.IsPrefix.isInfix this)
-    simp only [← map_mul]
-    exact FreeMonoid.is_infix_congr hBr μ
+    simpa only [← map_mul] using FreeMonoid.is_infix_congr hBr μ
