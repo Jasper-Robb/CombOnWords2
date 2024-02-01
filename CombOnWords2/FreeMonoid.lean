@@ -2,19 +2,19 @@ import CombOnWords2.simp_attr
 import Mathlib.Algebra.FreeMonoid.Basic
 import Mathlib.Data.List.Join
 
-namespace FreeMonoid
-
 infixr:90 " ∘* " => MonoidHom.comp
 
+namespace FreeMonoid
+
 @[freemonoid_to_list]
-def toList' (w : FreeMonoid α) : List α := w
+def toList' (fm : FreeMonoid α) : List α := fm
 
 @[freemonoid_to_list]
 def one_eq_list_nil : (1 : FreeMonoid α) = ([] : List α) := rfl
 
 @[freemonoid_to_list]
-theorem mul_eq_list_append (v w : FreeMonoid α)
-    : v * w = v.toList' ++ w.toList' :=
+theorem mul_eq_list_append (fm₁ fm₂ : FreeMonoid α)
+    : fm₁ * fm₂ = fm₁.toList' ++ fm₂.toList' :=
   rfl
 
 @[freemonoid_to_list]
@@ -27,9 +27,9 @@ def length' : FreeMonoid α →* Multiplicative ℕ where
   map_one' := List.length_nil
   map_mul' := List.length_append
 
-def length (w : FreeMonoid α) : ℕ := length' w
+def length (fm : FreeMonoid α) : ℕ := length' fm
 
--- Macro for length w as |w|
+-- Macro for length fm as |fm|
 macro:max atomic("|" noWs) a:term noWs "|" : term => `(length $a)
 def FreeMonoid.length.unexpander : Lean.PrettyPrinter.Unexpander
   | `($_ $a) =>
@@ -39,7 +39,7 @@ def FreeMonoid.length.unexpander : Lean.PrettyPrinter.Unexpander
   | _ => throw ()
 
 @[freemonoid_to_list]
-theorem length_eq_list_length (w : FreeMonoid α) : w.length = List.length w :=
+theorem length_eq_list_length (fm : FreeMonoid α) : fm.length = List.length fm :=
   rfl
 
 def join : FreeMonoid (FreeMonoid α) →* FreeMonoid α where
@@ -48,19 +48,19 @@ def join : FreeMonoid (FreeMonoid α) →* FreeMonoid α where
   map_mul' := List.join_append
 
 @[freemonoid_to_list]
-theorem join_eq_list_join (w : FreeMonoid (FreeMonoid α)) : join w = List.join w :=
+theorem join_eq_list_join (fm : FreeMonoid (FreeMonoid α)) : join fm = List.join fm :=
   rfl
 
-def take (a : ℕ) (w : FreeMonoid α) : FreeMonoid α := List.take a w
+def take (a : ℕ) (fm : FreeMonoid α) : FreeMonoid α := List.take a fm
 
 @[freemonoid_to_list]
-theorem take_eq_list_take (a : ℕ) (w : FreeMonoid α) : w.take a = List.take a w :=
+theorem take_eq_list_take (a : ℕ) (fm : FreeMonoid α) : fm.take a = List.take a fm :=
   rfl
 
-def drop (a : ℕ) (w : FreeMonoid α) : FreeMonoid α := List.drop a w
+def drop (a : ℕ) (fm : FreeMonoid α) : FreeMonoid α := List.drop a fm
 
 @[freemonoid_to_list]
-theorem drop_eq_list_drop (a : ℕ) (w : FreeMonoid α) : w.drop a = List.drop a w :=
+theorem drop_eq_list_drop (a : ℕ) (fm : FreeMonoid α) : fm.drop a = List.drop a fm :=
   rfl
 
 def NonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop :=

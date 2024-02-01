@@ -1,5 +1,6 @@
 import CombOnWords2.FreeMonoid
-import MathlibExtras.LibrarySearch
+import Mathlib.Data.Fintype.Basic
+import Mathlib.Tactic.FinCases
 
 abbrev Word (α : Type*) [Fintype α] := FreeMonoid α
 
@@ -66,7 +67,6 @@ theorem chapter1_question4 (v : Word (Fin 2)) (hv : HasOverlap v)
         rw [FreeMonoid.ofList_cons, map_mul]
         simp only [freemonoid_to_list, List.take_cons_succ, List.take_zero]
         rw [List.take_append_of_le_length]
-        · fin_cases x <;> decide
-        · fin_cases x <;> decide
-    apply List.IsInfix.trans (List.IsPrefix.isInfix this)
+        all_goals fin_cases x <;> decide
+    apply List.IsInfix.trans <| List.IsPrefix.isInfix this
     simpa only [← map_mul] using FreeMonoid.is_infix_congr hBr μ
