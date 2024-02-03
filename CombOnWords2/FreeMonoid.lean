@@ -125,3 +125,27 @@ theorem join_map_nonerasing {f : α → FreeMonoid β} (hf : ∀ x, 0 < |f x|)
   cases fm with
   | nil => contradiction
   | cons x xs => simpa [freemonoid_to_list] using Or.inl <| hf x
+
+section instances
+
+variable {α : Type*} [DecidableEq α]
+
+instance : Membership α (FreeMonoid α) :=
+  ⟨List.Mem⟩
+
+instance : DecidableEq (FreeMonoid α) :=
+  inferInstanceAs <| DecidableEq (List α)
+
+instance (a : α) (fm : FreeMonoid α) : Decidable (a ∈ fm) :=
+  inferInstanceAs <| Decidable (a ∈ FreeMonoid.toList fm)
+
+instance (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <:* fm₂) :=
+  inferInstanceAs <| Decidable (fm₁ <:+ fm₂)
+
+instance (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <*: fm₂) :=
+  inferInstanceAs <| Decidable (fm₁ <+: fm₂)
+
+instance (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <:*: fm₂) :=
+  inferInstanceAs <| Decidable (fm₁ <:+: fm₂)
+
+end instances
