@@ -4,7 +4,14 @@ import Mathlib.Tactic.FinCases
 
 abbrev Word (α : Type*) [Fintype α] := FreeMonoid α
 
+
 variable {α : Type*} [Fintype α] 
+
+
+def toWord (n : ℕ) (l : List (Fin n)) : Word (Fin n) := l
+
+infix:75 " $↑ " => toWord
+
 
 def Overlap (w : Word α) : Prop :=
   ∃ (B : Word α), 0 < |B| ∧ w = B * B * B.take 1
@@ -12,15 +19,11 @@ def Overlap (w : Word α) : Prop :=
 def HasOverlap (w : Word α) : Prop :=
   ∃ (B : Word α), 0 < |B| ∧ B * B * B.take 1 <:*: w
 
+
 theorem factor_no_overlap_of_no_overlap (v w : Word α) (hw : ¬HasOverlap w) (hvw : v <:*: w)
     : ¬HasOverlap v :=
   fun ⟨B, hBl, hBr⟩ => hw <| Exists.intro B <| ⟨hBl, List.IsInfix.trans hBr hvw⟩
 
-def μ : Monoid.End (Word (Fin 2)) := 
-  FreeMonoid.join ∘* FreeMonoid.map (fun x => if x = 0 then [0, 1] else [1, 0])
-
-theorem μ_nonerasing : FreeMonoid.NonErasing μ :=
-  FreeMonoid.join_map_nonerasing fun x => by fin_cases x <;> exact Nat.succ_pos 1
 
 theorem chapter1_question2 (u : Word α) (hu : Overlap u)
     : ∃ (v w z : Word α), u = w * v ∧ u = z * w ∧ |w| > |v| := by
@@ -32,6 +35,7 @@ theorem chapter1_question2 (u : Word α) (hu : Overlap u)
   apply And.intro
   · rwa [← mul_assoc]
   · simpa [freemonoid_to_list] using Nat.sub_lt hBl Nat.one_pos
+
 
 theorem chapter1_question3 (u : Word α) (hu : Overlap u)
     : (∃ (x : Word α), 0 < |x| ∧ u = x * x * x) ∨ 
@@ -54,6 +58,13 @@ theorem chapter1_question3 (u : Word α) (hu : Overlap u)
     · conv => rhs; lhs; rw [mul_assoc]
       simpa only [freemonoid_to_list, List.take_append_drop]
 
+
+def μ : Monoid.End (Word (Fin 2)) := 
+  FreeMonoid.join ∘* FreeMonoid.map (fun x => if x = 0 then [0, 1] else [1, 0])
+
+theorem μ_nonerasing : FreeMonoid.NonErasing μ :=
+  FreeMonoid.join_map_nonerasing fun x => by fin_cases x <;> exact Nat.succ_pos 1
+
 theorem chapter1_question4 (v : Word (Fin 2)) (hv : HasOverlap v)
     : HasOverlap (μ v) := by
   rcases hv with ⟨B, hBl, hBr⟩
@@ -72,3 +83,52 @@ theorem chapter1_question4 (v : Word (Fin 2)) (hv : HasOverlap v)
         all_goals fin_cases x <;> decide
     apply List.IsInfix.trans <| List.IsPrefix.isInfix this
     simpa only [← map_mul] using FreeMonoid.is_infix_congr hBr μ
+
+
+def complement : Monoid.End (Word (Fin 2)) :=
+  FreeMonoid.map fun x => (1 - x)
+
+prefix:100 "~" => complement
+
+@[simp]
+theorem complement_complement (w : Word (Fin 2)) : ~(~w) = w := by
+  change (complement ∘* complement) w = (MonoidHom.id (Word (Fin 2))) w
+  congr
+  unfold complement
+  rw [← FreeMonoid.map_comp, ← FreeMonoid.map_id]
+  congr
+  funext x
+  fin_cases x <;> rfl
+
+@[simp]
+theorem length_complement (w : Word (Fin 2)) : |~w| = |w| :=
+  List.length_map w (fun x => 1 - x)
+
+def X : ℕ → Word (Fin 2)
+  | 0   => [0]
+  | n+1 => X n * ~X n
+
+theorem chapter1_question7 (n : ℕ)
+    : (μ^n : Monoid.End (Word (Fin 2))) [0] = X n ∧ 
+      (μ^n : Monoid.End (Word (Fin 2))) [1] = ~X n := by
+  induction n with
+  | zero => exact ⟨rfl, rfl⟩
+  | succ k ih =>
+    apply And.intro
+    · exact calc 
+      (μ^k.succ) [0] = (μ^k) (μ [0])               := by rw [pow_succ' μ k]; rfl
+                   _ = (μ^k) [0, 1]                := by rfl
+                   _ = (μ^k) (2 $↑ [0] * 2 $↑ [1]) := by rfl
+                   _ = (μ^k) [0] * (μ^k) [1]       := by rw [map_mul]; rfl
+                   _ = X k * ~X k                  := by rw [ih.left, ih.right]
+                   _ = X k.succ                    := by rfl
+    · exact calc 
+      (μ^k.succ) [1] = (μ^k) (μ [1])               := by rw [pow_succ' μ k]; rfl
+                   _ = (μ^k) [1, 0]                := by rfl
+                   _ = (μ^k) (2 $↑ [1] * 2 $↑ [0]) := by rfl
+                   _ = (μ^k) [1] * (μ^k) [0]       := by rw [map_mul]; rfl
+                   _ = ~X k * X k                  := by rw [ih.right, ih.left]
+                   _ = ~X k * ~(~X k)              := by rw [complement_complement] 
+                   _ = ~(X k * ~X k)               := by rw [← map_mul]
+                   _ = ~X k.succ                   := by rfl
+
