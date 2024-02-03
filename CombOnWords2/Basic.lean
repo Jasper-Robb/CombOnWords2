@@ -94,11 +94,7 @@ prefix:100 "~" => complement
 theorem complement_complement (w : Word (Fin 2)) : ~(~w) = w := by
   change (complement ∘* complement) w = (MonoidHom.id (Word (Fin 2))) w
   congr
-  unfold complement
-  rw [← FreeMonoid.map_comp, ← FreeMonoid.map_id]
-  congr
-  funext x
-  fin_cases x <;> rfl
+  exact FreeMonoid.hom_eq fun x => by fin_cases x <;> rfl
 
 @[simp]
 theorem length_complement (w : Word (Fin 2)) : |~w| = |w| :=

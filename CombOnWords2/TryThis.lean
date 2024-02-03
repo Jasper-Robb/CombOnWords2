@@ -1,7 +1,13 @@
 import CombOnWords2.Basic
 import MathlibExtras.LibrarySearch
 
-example : (complement ∘* complement) w = complement (complement w) := by
-  simp only [MonoidHom.coe_comp, Function.comp_apply]
+variable {α β : Type*}
+variable [Fintype α] [Fintype β]
 
-example [Fintype α] (w : Word α) : (MonoidHom.id (Word α)) w = w := by simp only [MonoidHom.id_apply]
+theorem complement_complement2 (w : Word (Fin 2)) : ~(~w) = w := by
+  sorry
+
+theorem word_morphism_eq (f g : Word α →* Word β) (h : ∀ (x : α), f (FreeMonoid.of x) = g (FreeMonoid.of x))
+    : f = g := by
+  exact FreeMonoid.hom_eq h
+
