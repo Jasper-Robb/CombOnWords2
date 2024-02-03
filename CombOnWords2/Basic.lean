@@ -12,13 +12,15 @@ def Overlap (w : Word α) : Prop :=
 def HasOverlap (w : Word α) : Prop :=
   ∃ (B : Word α), 0 < |B| ∧ B * B * B.take 1 <:*: w
 
+theorem factor_no_overlap_of_no_overlap (v w : Word α) (hw : ¬HasOverlap w) (hvw : v <:*: w)
+    : ¬HasOverlap v :=
+  fun ⟨B, hBl, hBr⟩ => hw <| Exists.intro B <| ⟨hBl, List.IsInfix.trans hBr hvw⟩
+
 def μ : Monoid.End (Word (Fin 2)) := 
   FreeMonoid.join ∘* FreeMonoid.map (fun x => if x = 0 then [0, 1] else [1, 0])
 
-theorem μ_nonerasing : FreeMonoid.NonErasing μ := by
-  apply FreeMonoid.join_map_nonerasing
-  intro x
-  fin_cases x <;> exact Nat.succ_pos 1
+theorem μ_nonerasing : FreeMonoid.NonErasing μ :=
+  FreeMonoid.join_map_nonerasing fun x => by fin_cases x <;> exact Nat.succ_pos 1
 
 theorem chapter1_question2 (u : Word α) (hu : Overlap u)
     : ∃ (v w z : Word α), u = w * v ∧ u = z * w ∧ |w| > |v| := by
