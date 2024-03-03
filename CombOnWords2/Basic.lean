@@ -57,6 +57,15 @@ theorem overlap_iff (u : Word α) : Overlap u ↔ 2 < |u| ∧ u = u.take (|u| / 
       rw [List.append_right_inj, List.take_take, Nat.min_eq_left]
       exact @Nat.div_le_div_right 2 |u| 2 <| Nat.le_of_lt hlu
 
+theorem has_overlap_iff (w : Word α) : HasOverlap w ↔ ∃ u, Overlap u ∧ u <:*: w := by
+  constructor
+  · intro ⟨B, hBl, hBr⟩
+    exists B * B * B.take 1
+    exact ⟨by exists B;, hBr⟩
+  · intro ⟨_, ⟨B, hBl, hBr⟩, _⟩
+    exists B
+    exact ⟨hBl, by rwa [← hBr]⟩
+
 theorem factor_no_overlap_of_no_overlap (v w : Word α) (hw : ¬HasOverlap w) (hvw : v <:*: w)
     : ¬HasOverlap v :=
   fun ⟨B, hBl, hBr⟩ => hw <| Exists.intro B <| ⟨hBl, List.IsInfix.trans hBr hvw⟩
