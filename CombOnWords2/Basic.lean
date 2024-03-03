@@ -66,6 +66,27 @@ theorem has_overlap_iff (w : Word α) : (∃ u, Overlap u ∧ u <:*: w) ↔ HasO
     exists B * B * B.take 1
     exact ⟨by exists B;, hBr⟩
 
+theorem has_overlap_iff2 (w : Word α) : 
+    (∃ t ∈ w.tails, ∃ s ∈ t.inits, Overlap s) ↔ HasOverlap w := by
+  rw [← has_overlap_iff]
+  constructor
+  · intro ⟨t, htw, s, hts, hs⟩
+    exists s
+    constructor
+    · exact hs
+    · apply (List.infix_iff_prefix_suffix s w).mpr 
+      exists t
+      exact ⟨(List.mem_inits s t).mp hts, (List.mem_tails t w).mp htw⟩
+  · intro ⟨u, hu, ⟨x, y, hxy⟩⟩
+    change List α at x y w u
+    exists u ++ y
+    constructor
+    · apply (List.mem_tails (u ++ y) w).mpr
+      exists x
+      rwa [← List.append_assoc]
+    · exists u
+      exact ⟨(List.mem_inits u (u ++ y)).mpr <| List.prefix_append u y, hu⟩
+
 theorem factor_no_overlap_of_no_overlap (v w : Word α) (hw : ¬HasOverlap w) (hvw : v <:*: w)
     : ¬HasOverlap v :=
   fun ⟨B, hBl, hBr⟩ => hw <| Exists.intro B <| ⟨hBl, List.IsInfix.trans hBr hvw⟩
@@ -73,6 +94,9 @@ theorem factor_no_overlap_of_no_overlap (v w : Word α) (hw : ¬HasOverlap w) (h
 
 instance [DecidableEq α] (u : Word α) : Decidable (Overlap u) := 
   decidable_of_decidable_of_iff <| overlap_iff u
+
+instance [DecidableEq α] (u : Word α) : Decidable (HasOverlap u) :=
+  decidable_of_decidable_of_iff <| has_overlap_iff2 u
 
 
 theorem chapter1_question2 (u : Word α) (hu : Overlap u)
