@@ -1,6 +1,7 @@
 import CombOnWords2.FreeMonoid
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Tactic.FinCases
+import Mathlib.Data.Nat.Parity
 
 abbrev Word (α : Type*) [Fintype α] := FreeMonoid α
 
@@ -19,6 +20,42 @@ def Overlap (w : Word α) : Prop :=
 def HasOverlap (w : Word α) : Prop :=
   ∃ (B : Word α), 0 < |B| ∧ B * B * B.take 1 <:*: w
 
+
+theorem length_odd_of_overlap (w : Word α) (hw : Overlap w) : Odd |w| := by
+  rcases hw with ⟨B, hBl, hBr⟩
+  change 1 ≤ List.length B at hBl
+  simp only [freemonoid_to_list, hBr, List.length_append, 
+             ← Nat.two_mul, List.length_take, Nat.min_eq_left hBl]
+  exists |B|
+
+theorem overlap_iff (u : Word α) : Overlap u ↔ 2 < |u| ∧ u = u.take (|u| / 2) ^ 2 * u.take 1 := by
+  constructor
+  · intro ⟨B, hBl, hBr⟩
+    simp only [freemonoid_to_list] at *
+    constructor
+    · simp only [hBr, List.length_append, List.length_take, Nat.min_eq_left hBl]
+      apply lt_add_of_tsub_lt_right
+      simpa [← Nat.two_mul] using one_lt_mul_of_lt_of_le Nat.one_lt_two hBl
+    · change 1 ≤ List.length B at hBl
+      have huB₁ : List.take (List.length u / 2) u = B := by
+        rw [hBr, List.append_assoc, List.take_append_of_le_length]
+        all_goals simp only [List.length_append, List.length_take, Nat.min_eq_left hBl,
+                             ← add_assoc, ← Nat.two_mul, zero_lt_two, Nat.add_div, 
+                             Nat.mul_div_right, Nat.mul_mod_right]
+        apply List.take_length
+        rfl
+      have huB₂ : List.take 1 u = List.take 1 B := by
+        rwa [hBr, List.append_assoc, List.take_append_of_le_length]
+      rwa [sq, huB₁, huB₂]
+  · intro ⟨hlu, hu⟩
+    exists u.take (|u| / 2)
+    simp only [freemonoid_to_list, sq] at *
+    constructor
+    · simp only [List.length_take, lt_min_iff]
+      exact ⟨Nat.div_pos (Nat.le_of_lt hlu) Nat.two_pos, Nat.zero_lt_of_lt hlu⟩
+    · nth_rewrite 1 [hu]
+      rw [List.append_right_inj, List.take_take, Nat.min_eq_left]
+      exact @Nat.div_le_div_right 2 |u| 2 <| Nat.le_of_lt hlu
 
 theorem factor_no_overlap_of_no_overlap (v w : Word α) (hw : ¬HasOverlap w) (hvw : v <:*: w)
     : ¬HasOverlap v :=
