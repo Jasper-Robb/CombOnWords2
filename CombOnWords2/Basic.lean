@@ -28,8 +28,17 @@ theorem length_odd_of_overlap (w : Word α) (hw : Overlap w) : Odd |w| := by
              ← Nat.two_mul, List.length_take, Nat.min_eq_left hBl]
   exists |B|
 
-theorem overlap_iff (u : Word α) : Overlap u ↔ 2 < |u| ∧ u = u.take (|u| / 2) ^ 2 * u.take 1 := by
+theorem overlap_iff (u : Word α) : 2 < |u| ∧ u = u.take (|u| / 2) ^ 2 * u.take 1 ↔ Overlap u := by
   constructor
+  · intro ⟨hlu, hu⟩
+    exists u.take (|u| / 2)
+    simp only [freemonoid_to_list, sq] at *
+    constructor
+    · simp only [List.length_take, lt_min_iff]
+      exact ⟨Nat.div_pos (Nat.le_of_lt hlu) Nat.two_pos, Nat.zero_lt_of_lt hlu⟩
+    · nth_rewrite 1 [hu]
+      rw [List.append_right_inj, List.take_take, Nat.min_eq_left]
+      exact @Nat.div_le_div_right 2 |u| 2 <| Nat.le_of_lt hlu
   · intro ⟨B, hBl, hBr⟩
     simp only [freemonoid_to_list] at *
     constructor
@@ -47,28 +56,23 @@ theorem overlap_iff (u : Word α) : Overlap u ↔ 2 < |u| ∧ u = u.take (|u| / 
       have huB₂ : List.take 1 u = List.take 1 B := by
         rwa [hBr, List.append_assoc, List.take_append_of_le_length]
       rwa [sq, huB₁, huB₂]
-  · intro ⟨hlu, hu⟩
-    exists u.take (|u| / 2)
-    simp only [freemonoid_to_list, sq] at *
-    constructor
-    · simp only [List.length_take, lt_min_iff]
-      exact ⟨Nat.div_pos (Nat.le_of_lt hlu) Nat.two_pos, Nat.zero_lt_of_lt hlu⟩
-    · nth_rewrite 1 [hu]
-      rw [List.append_right_inj, List.take_take, Nat.min_eq_left]
-      exact @Nat.div_le_div_right 2 |u| 2 <| Nat.le_of_lt hlu
 
-theorem has_overlap_iff (w : Word α) : HasOverlap w ↔ ∃ u, Overlap u ∧ u <:*: w := by
+theorem has_overlap_iff (w : Word α) : (∃ u, Overlap u ∧ u <:*: w) ↔ HasOverlap w := by
   constructor
-  · intro ⟨B, hBl, hBr⟩
-    exists B * B * B.take 1
-    exact ⟨by exists B;, hBr⟩
   · intro ⟨_, ⟨B, hBl, hBr⟩, _⟩
     exists B
     exact ⟨hBl, by rwa [← hBr]⟩
+  · intro ⟨B, hBl, hBr⟩
+    exists B * B * B.take 1
+    exact ⟨by exists B;, hBr⟩
 
 theorem factor_no_overlap_of_no_overlap (v w : Word α) (hw : ¬HasOverlap w) (hvw : v <:*: w)
     : ¬HasOverlap v :=
   fun ⟨B, hBl, hBr⟩ => hw <| Exists.intro B <| ⟨hBl, List.IsInfix.trans hBr hvw⟩
+
+
+instance [DecidableEq α] (u : Word α) : Decidable (Overlap u) := 
+  decidable_of_decidable_of_iff <| overlap_iff u
 
 
 theorem chapter1_question2 (u : Word α) (hu : Overlap u)
