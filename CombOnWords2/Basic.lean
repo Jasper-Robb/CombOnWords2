@@ -62,30 +62,21 @@ theorem has_overlap_iff (w : Word α) : (∃ u, Overlap u ∧ u <:*: w) ↔ HasO
   · intro ⟨_, ⟨B, hBl, hBr⟩, _⟩
     exists B
     exact ⟨hBl, by rwa [← hBr]⟩
-  · intro ⟨B, hBl, hBr⟩
+  · intro ⟨B, _, hBr⟩
     exists B * B * B.take 1
     exact ⟨by exists B;, hBr⟩
 
-theorem has_overlap_iff2 (w : Word α) : 
-    (∃ t ∈ w.tails, ∃ s ∈ t.inits, Overlap s) ↔ HasOverlap w := by
-  rw [← has_overlap_iff]
+theorem has_overlap_iff2 (w : Word α) :
+    (∃ u ∈ w.infixes, Overlap u) ↔ HasOverlap w := by
   constructor
-  · intro ⟨t, htw, s, hts, hs⟩
-    exists s
-    constructor
-    · exact hs
-    · apply (List.infix_iff_prefix_suffix s w).mpr 
-      exists t
-      exact ⟨(List.mem_inits s t).mp hts, (List.mem_tails t w).mp htw⟩
-  · intro ⟨u, hu, ⟨x, y, hxy⟩⟩
-    change List α at x y w u
-    exists u ++ y
-    constructor
-    · apply (List.mem_tails (u ++ y) w).mpr
-      exists x
-      rwa [← List.append_assoc]
-    · exists u
-      exact ⟨(List.mem_inits u (u ++ y)).mpr <| List.prefix_append u y, hu⟩
+  · intro ⟨u, hul, hur⟩
+    apply (has_overlap_iff w).mp
+    exists u
+    exact ⟨hur, (FreeMonoid.mem_infixes u w).mp hul⟩
+  · intro h
+    rcases (has_overlap_iff w).mpr h with ⟨u, hul, hur⟩
+    exists u
+    exact ⟨(FreeMonoid.mem_infixes u w).mpr hur, hul⟩
 
 theorem factor_no_overlap_of_no_overlap (v w : Word α) (hw : ¬HasOverlap w) (hvw : v <:*: w)
     : ¬HasOverlap v :=

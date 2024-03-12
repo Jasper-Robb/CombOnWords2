@@ -1,4 +1,5 @@
 import CombOnWords2.simp_attr
+import CombOnWords2.List
 import Mathlib.Algebra.FreeMonoid.Basic
 import Mathlib.Data.List.Join
 
@@ -115,9 +116,33 @@ theorem is_infix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <:*: fm₂) (f :
   repeat rw [← map_mul]
   congr
 
+
+def inits (fm : FreeMonoid α) : FreeMonoid (FreeMonoid α) :=
+  List.inits fm
+
+def tails (fm : FreeMonoid α) : FreeMonoid (FreeMonoid α) :=
+  List.tails fm
+
+def infixes (fm : FreeMonoid α) : FreeMonoid (FreeMonoid α) :=
+  List.infixes fm
+
+
+@[freemonoid_to_list]
+theorem inits_eq_list_inits (fm : FreeMonoid α) : fm.inits = List.inits fm := 
+  rfl
+
+@[freemonoid_to_list]
+theorem tails_eq_list_tails (fm : FreeMonoid α) : fm.tails = List.tails fm := 
+  rfl
+
+@[freemonoid_to_list]
+theorem infixes_eq_list_infixes (fm : FreeMonoid α) : fm.infixes = List.infixes fm := 
+  rfl
+
+
 theorem map_nonerasing {f : α → β} : NonErasing <| map f := by
   intro fm hfm
-  simpa only [freemonoid_to_list, List.length_map]
+  simpa [freemonoid_to_list]
 
 theorem join_map_nonerasing {f : α → FreeMonoid β} (hf : ∀ x, 0 < |f x|)
     : NonErasing <| join ∘* map f := by
@@ -149,3 +174,13 @@ instance (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <:*: fm₂) :=
   inferInstanceAs <| Decidable (fm₁ <:+: fm₂)
 
 end instances
+
+
+theorem mem_inits (fm₁ fm₂ : FreeMonoid α) : fm₁ ∈ fm₂.inits ↔ fm₁ <*: fm₂ := 
+  List.mem_inits fm₁ fm₂
+
+theorem mem_tails (fm₁ fm₂ : FreeMonoid α) : fm₁ ∈ fm₂.tails ↔ fm₁ <:* fm₂ := 
+  List.mem_tails fm₁ fm₂
+
+theorem mem_infixes (fm₁ fm₂ : FreeMonoid α) : fm₁ ∈ fm₂.infixes ↔ fm₁ <:*: fm₂ := 
+  List.mem_infixes fm₁ fm₂
