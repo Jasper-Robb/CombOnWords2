@@ -66,7 +66,7 @@ theorem has_overlap_iff (w : Word α) : (∃ u, Overlap u ∧ u <:*: w) ↔ HasO
     exists B * B * B.take 1
     exact ⟨by exists B;, hBr⟩
 
-theorem has_overlap_iff2 (w : Word α) :
+theorem has_overlap_iff' (w : Word α) :
     (∃ u ∈ w.infixes, Overlap u) ↔ HasOverlap w := by
   constructor
   · intro ⟨u, hul, hur⟩
@@ -87,7 +87,7 @@ instance [DecidableEq α] (u : Word α) : Decidable (Overlap u) :=
   decidable_of_decidable_of_iff <| overlap_iff u
 
 instance [DecidableEq α] (u : Word α) : Decidable (HasOverlap u) :=
-  decidable_of_decidable_of_iff <| has_overlap_iff2 u
+  decidable_of_decidable_of_iff <| has_overlap_iff' u
 
 
 theorem chapter1_question2 (u : Word α) (hu : Overlap u)
