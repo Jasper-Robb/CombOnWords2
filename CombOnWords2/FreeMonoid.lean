@@ -197,3 +197,36 @@ theorem mem_tails (fm₁ fm₂ : FreeMonoid α) : fm₁ ∈ fm₂.tails ↔ fm�
 
 theorem mem_infixes (fm₁ fm₂ : FreeMonoid α) : fm₁ ∈ fm₂.infixes ↔ fm₁ <:*: fm₂ := 
   List.mem_infixes fm₁ fm₂
+
+
+def RightExtensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
+  {p : FreeMonoid α | fm <*: p}
+
+def LeftExtensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
+  {s : FreeMonoid α | fm <:* s}
+
+def Extensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
+  RightExtensions fm ∪ LeftExtensions fm 
+
+
+theorem prod2_length_le (fm : FreeMonoid α) (fm₁ fm₂ : FreeMonoid α) (h : fm = fm₁ * fm₂) 
+    : |fm₁| ≤ |fm| ∧ |fm₂| ≤ |fm| := by
+  apply congr_arg length at h
+  simp only [freemonoid_to_list, List.length_append] at h
+  constructor
+  · exact Nat.le.intro h.symm
+  · rw [add_comm] at h
+    exact Nat.le.intro h.symm
+
+theorem prod3_length_le (fm : FreeMonoid α) (fm₁ fm₂ fm₃ : FreeMonoid α) (h : fm = fm₁ * fm₂ * fm₃) 
+    : |fm₁| ≤ |fm| ∧ |fm₂| ≤ |fm| ∧ |fm₃| ≤ |fm| := by
+  apply congr_arg length at h
+  simp only [freemonoid_to_list, List.length_append] at h
+  constructor
+  · rw [add_assoc] at h
+    exact Nat.le.intro h.symm
+  constructor
+  · rw [add_comm, ← add_assoc, add_comm] at h
+    exact Nat.le.intro h.symm
+  · rw [add_comm] at h
+    exact Nat.le.intro h.symm
