@@ -48,28 +48,18 @@ theorem length_eq_list_length (fm : FreeMonoid α) : fm.length = List.length fm 
   rfl
 
 
+@[freemonoid_to_list]
 def join : FreeMonoid (FreeMonoid α) →* FreeMonoid α where
   toFun    := List.join
   map_one' := List.join_nil
   map_mul' := List.join_append
 
+
 @[freemonoid_to_list]
-theorem join_eq_list_join (fm : FreeMonoid (FreeMonoid α)) : join fm = List.join fm :=
-  rfl
-
-
 def take (a : ℕ) (fm : FreeMonoid α) : FreeMonoid α := List.take a fm
 
 @[freemonoid_to_list]
-theorem take_eq_list_take (a : ℕ) (fm : FreeMonoid α) : fm.take a = List.take a fm :=
-  rfl
-
-
 def drop (a : ℕ) (fm : FreeMonoid α) : FreeMonoid α := List.drop a fm
-
-@[freemonoid_to_list]
-theorem drop_eq_list_drop (a : ℕ) (fm : FreeMonoid α) : fm.drop a = List.drop a fm :=
-  rfl
 
 
 def NonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop :=
@@ -141,28 +131,27 @@ theorem is_infix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <:*: fm₂) (f :
   congr
 
 
+def RightExtensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
+  {p : FreeMonoid α | fm <*: p}
+
+def LeftExtensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
+  {s : FreeMonoid α | fm <:* s}
+
+def Extensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
+  RightExtensions fm ∪ LeftExtensions fm 
+
+
 @[freemonoid_to_list]
-theorem inits_eq_list_inits (fm : FreeMonoid α) : fm.inits = List.inits fm := 
-  rfl
-
-@[freemonoid_to_list]
-theorem tails_eq_list_tails (fm : FreeMonoid α) : fm.tails = List.tails fm := 
-  rfl
-
-@[freemonoid_to_list]
-theorem infixes_eq_list_infixes (fm : FreeMonoid α) : fm.infixes = List.infixes fm := 
-  rfl
-
-
 def inits (fm : FreeMonoid α) : FreeMonoid (FreeMonoid α) :=
   List.inits fm
 
+@[freemonoid_to_list]
 def tails (fm : FreeMonoid α) : FreeMonoid (FreeMonoid α) :=
   List.tails fm
 
+@[freemonoid_to_list]
 def infixes (fm : FreeMonoid α) : FreeMonoid (FreeMonoid α) :=
   List.infixes fm
-
 
 
 theorem map_nonerasing {f : α → β} : NonErasing <| map f := by
@@ -174,6 +163,7 @@ theorem join_map_nonerasing {f : α → FreeMonoid β} (hf : ∀ x, 0 < |f x|)
   rintro (_ | l) _
   · contradiction
   · simpa [freemonoid_to_list] using Or.inl <| hf l
+
 
 section instances
 
@@ -200,26 +190,6 @@ instance (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <:*: fm₂) :=
 end instances
 
 
-theorem mem_inits (fm₁ fm₂ : FreeMonoid α) : fm₁ ∈ fm₂.inits ↔ fm₁ <*: fm₂ := 
-  List.mem_inits fm₁ fm₂
-
-theorem mem_tails (fm₁ fm₂ : FreeMonoid α) : fm₁ ∈ fm₂.tails ↔ fm₁ <:* fm₂ := 
-  List.mem_tails fm₁ fm₂
-
-theorem mem_infixes (fm₁ fm₂ : FreeMonoid α) : fm₁ ∈ fm₂.infixes ↔ fm₁ <:*: fm₂ := 
-  List.mem_infixes fm₁ fm₂
-
-
-def RightExtensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
-  {p : FreeMonoid α | fm <*: p}
-
-def LeftExtensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
-  {s : FreeMonoid α | fm <:* s}
-
-def Extensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
-  RightExtensions fm ∪ LeftExtensions fm 
-
-
 theorem prod2_length_le (fm : FreeMonoid α) (fm₁ fm₂ : FreeMonoid α) (h : fm = fm₁ * fm₂) 
     : |fm₁| ≤ |fm| ∧ |fm₂| ≤ |fm| := by
   apply congr_arg length at h
@@ -241,3 +211,4 @@ theorem prod3_length_le (fm : FreeMonoid α) (fm₁ fm₂ fm₃ : FreeMonoid α)
     exact Nat.le.intro h.symm
   · rw [add_comm] at h
     exact Nat.le.intro h.symm
+

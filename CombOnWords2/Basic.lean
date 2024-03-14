@@ -72,11 +72,11 @@ theorem has_overlap_iff' (w : Word α) :
   · intro ⟨u, hul, hur⟩
     apply (has_overlap_iff w).mp
     exists u
-    exact ⟨hur, (FreeMonoid.mem_infixes u w).mp hul⟩
+    exact ⟨hur, (List.mem_infixes u w).mp hul⟩
   · intro h
     rcases (has_overlap_iff w).mpr h with ⟨u, hul, hur⟩
     exists u
-    exact ⟨(FreeMonoid.mem_infixes u w).mpr hur, hul⟩
+    exact ⟨(List.mem_infixes u w).mpr hur, hul⟩
 
 theorem factor_no_overlap_of_no_overlap (v w : Word α) (hw : ¬HasOverlap w) (hvw : v <:*: w)
     : ¬HasOverlap v :=
@@ -128,7 +128,7 @@ def μ : Monoid.End (Word (Fin 2)) :=
   FreeMonoid.join ∘* FreeMonoid.map (fun x => if x = 0 then [0, 1] else [1, 0])
 
 theorem μ_nonerasing : FreeMonoid.NonErasing μ :=
-  FreeMonoid.join_map_nonerasing fun x => by fin_cases x <;> exact Nat.succ_pos 1
+  FreeMonoid.join_map_nonerasing fun x => by fin_cases x <;> exact Nat.two_pos
 
 theorem chapter1_question4 (v : Word (Fin 2)) (hv : HasOverlap v)
     : HasOverlap (μ v) := by
