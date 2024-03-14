@@ -75,6 +75,20 @@ theorem drop_eq_list_drop (a : ℕ) (fm : FreeMonoid α) : fm.drop a = List.drop
 def NonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop :=
     ∀ (fm : FreeMonoid α), 0 < |fm| → 0 < |f fm|
 
+instance : LE (Multiplicative ℕ) := inferInstanceAs (LE ℕ)
+
+theorem nonerasing_iff (f : FreeMonoid α →* FreeMonoid β)
+    : NonErasing f ↔ (∀ fm, |fm| ≤ |f fm|) := by
+  constructor
+  · intro h fm
+    induction fm with
+    | nil => exact tsub_add_cancel_iff_le.mp rfl
+    | cons x xs ih =>
+      change length' (of x * ofList xs) ≤ length' (f (of x * ofList xs))
+      simpa only [map_mul] using Nat.add_le_add (h [x] Nat.one_pos) ih
+  · exact fun h fm hfm => Nat.lt_of_lt_of_le hfm <| h fm
+
+
 def IsPrefix (fm₁ : FreeMonoid α) (fm₂ : FreeMonoid α) : Prop :=
   ∃ t, fm₁ * t = fm₂
 
@@ -83,7 +97,6 @@ def IsSuffix (fm₁ : FreeMonoid α) (fm₂ : FreeMonoid α) : Prop :=
 
 def IsInfix (fm₁ : FreeMonoid α) (fm₂ : FreeMonoid α) : Prop :=
   ∃ s t, s * fm₁ * t = fm₂
-
 
 infixl:50 " <*: " => IsPrefix
 infixl:50 " <:* " => IsSuffix
@@ -153,16 +166,14 @@ def infixes (fm : FreeMonoid α) : FreeMonoid (FreeMonoid α) :=
 
 
 theorem map_nonerasing {f : α → β} : NonErasing <| map f := by
-  intro fm hfm
+  intro _ _
   simpa [freemonoid_to_list]
 
 theorem join_map_nonerasing {f : α → FreeMonoid β} (hf : ∀ x, 0 < |f x|)
     : NonErasing <| join ∘* map f := by
-  intro fm hfm
-  cases fm with
-  | nil => contradiction
-  | cons x xs => simpa [freemonoid_to_list] using Or.inl <| hf x
-
+  rintro (_ | l) _
+  · contradiction
+  · simpa [freemonoid_to_list] using Or.inl <| hf l
 
 section instances
 
