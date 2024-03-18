@@ -2,8 +2,29 @@ import CombOnWords2.FreeMonoid
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Tactic.FinCases
 import Mathlib.Data.Nat.Parity
+import Mathlib.Data.Fintype.Vector
 
-abbrev Word (α : Type*) [Fintype α] := FreeMonoid α
+
+section Defs
+
+
+variable (α : Type*) [h : Fintype α]
+
+
+abbrev Word := FreeMonoid α
+
+def AllWordsOfLength (n : ℕ) : Multiset (Word α) :=
+  (@Vector.fintype α h n).elems.val.map Vector.toList
+
+def AllWordsMaxLength : ℕ → Multiset (Word α)
+  | 0 => {[]}
+  | n+1 => AllWordsMaxLength n + AllWordsOfLength α (n+1)
+
+def WordMax (n : ℕ) :=
+  {w : Word α // |w| < n}
+
+
+end Defs
 
 
 variable {α : Type*} [Fintype α] 
@@ -12,6 +33,40 @@ variable {α : Type*} [Fintype α]
 def toWord (n : ℕ) (l : List (Fin n)) : Word (Fin n) := l
 
 infix:75 " $↑ " => toWord
+
+
+theorem length_of_mem_of_allWordsOfLength (n : ℕ) : ∀ a ∈ AllWordsOfLength α n, |a| = n := by
+  unfold AllWordsOfLength
+  rw [Multiset.forall_mem_map_iff]
+  exact fun x _ ↦ Vector.toList_length x
+
+theorem length_of_mem_of_allWordsMaxLength (n : ℕ) : ∀ a ∈ AllWordsMaxLength α n, |a| ≤ n := by
+  induction n with
+  | zero => 
+    unfold AllWordsMaxLength
+    simp [freemonoid_to_list]
+  | succ n ih =>
+    unfold AllWordsMaxLength
+    simp only [Multiset.mem_add]
+    rintro a (hal | har)
+    · exact Nat.le_step (ih a hal)
+    · exact (Nat.le_iff_lt_or_eq).mpr <| Or.inr <| length_of_mem_of_allWordsOfLength (n+1) a har
+
+theorem nodup_allWordsOfLength (n : ℕ) : Multiset.Nodup (AllWordsOfLength α n) :=
+  Multiset.Nodup.map_on (fun x _ y _ a ↦ Vector.eq x y a) Fintype.elems.nodup 
+
+theorem nodup_allWordsMaxLength (n : ℕ) : Multiset.Nodup (AllWordsMaxLength α n) := by
+  induction n with
+  | zero => 
+    unfold AllWordsMaxLength
+    simp
+  | succ n ih =>
+    apply (Multiset.Nodup.add_iff ih (nodup_allWordsOfLength (n + 1))).mpr
+    intro a h1 h2
+    have hla1 := length_of_mem_of_allWordsMaxLength n a h1
+    have hla2 := length_of_mem_of_allWordsOfLength (n+1) a h2
+    rw [hla2, Nat.succ_le] at hla1
+    exact LT.lt.false hla1
 
 
 def Overlap (w : Word α) : Prop :=

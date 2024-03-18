@@ -132,10 +132,10 @@ theorem is_infix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <:*: fm₂) (f :
 
 
 def RightExtensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
-  {p : FreeMonoid α | fm <*: p}
+  {p | fm <*: p}
 
 def LeftExtensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
-  {s : FreeMonoid α | fm <:* s}
+  {s | fm <:* s}
 
 def Extensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
   RightExtensions fm ∪ LeftExtensions fm 
@@ -167,7 +167,10 @@ theorem join_map_nonerasing {f : α → FreeMonoid β} (hf : ∀ x, 0 < |f x|)
 
 section instances
 
-variable {α : Type*} [DecidableEq α]
+variable {α : Type*} [DecidableEq α] [Repr α]
+
+instance : Repr (FreeMonoid α) :=
+  inferInstanceAs <| Repr (List α)
 
 instance : Membership α (FreeMonoid α) :=
   ⟨List.Mem⟩
