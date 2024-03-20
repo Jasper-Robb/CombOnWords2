@@ -3,9 +3,7 @@ import Mathlib.Data.Fintype.Basic
 import Mathlib.Tactic.FinCases
 import Mathlib.Data.Nat.Parity
 import Mathlib.Data.Fintype.Vector
-
-
-section Defs
+import Mathlib.Data.Nat.SuccPred
 
 
 abbrev Word (α : Type*) [Fintype α] := FreeMonoid α
@@ -25,9 +23,6 @@ def allWordsOfLength (α : Type*) [h : Fintype α] (n : ℕ) : Multiset (Word α
 def allWordsMaxLength (α : Type*) [Fintype α] : (n : ℕ) → Multiset (Word α)
   | 0 => 0
   | n+1 => allWordsMaxLength α n + allWordsOfLength α n
-
-
-end Defs
 
 
 variable {α : Type*} [Fintype α] 
@@ -50,6 +45,14 @@ theorem length_mem_allWordsMaxLength (n : ℕ) : ∀ w ∈ allWordsMaxLength α 
     · exact Nat.lt.step (ih a hal)
     · exact Nat.lt_succ.mpr <| Nat.le_of_eq <| length_mem_allWordsOfLength n a har
 
+
+def allWordsOfLength' (α : Type*) [Fintype α] (n : ℕ) : Multiset (WordLengthEq α n) :=
+  (allWordsOfLength α n).pmap Subtype.mk (length_mem_allWordsOfLength n)
+
+def allWordsMaxLength' (α : Type*) [Fintype α] (n : ℕ) : Multiset (WordLengthLt α n) :=
+  (allWordsMaxLength α n).pmap Subtype.mk (length_mem_allWordsMaxLength n)
+
+
 theorem nodup_allWordsOfLength (n : ℕ) : Multiset.Nodup (allWordsOfLength α n) := 
   Multiset.Nodup.map_on (fun x _ y _ a ↦ Vector.eq x y a) Fintype.elems.nodup
 
@@ -64,18 +67,40 @@ theorem nodup_allWordsMaxLength (n : ℕ) : Multiset.Nodup (allWordsMaxLength α
     exact LT.lt.false <| Eq.trans_lt hla1.symm hla2
 
 
-def allWordsOfLength' (α : Type*) [Fintype α] (n : ℕ) : Multiset (WordLengthEq α n) :=
-  (allWordsOfLength α n).pmap Subtype.mk (length_mem_allWordsOfLength n)
-
-def allWordsMaxLength' (α : Type*) [Fintype α] (n : ℕ) : Multiset (WordLengthLt α n) :=
-  (allWordsMaxLength α n).pmap Subtype.mk (length_mem_allWordsMaxLength n)
-
-
 theorem nodup_allWordsOfLength' (n : ℕ) : (allWordsOfLength' α n).Nodup :=
   Multiset.Nodup.pmap (fun _ _ _ _ ↦ Subtype.ext_iff.mp) <| nodup_allWordsOfLength n
 
 theorem nodup_allWordsMaxLength' (n : ℕ) : (allWordsMaxLength' α n).Nodup :=
   Multiset.Nodup.pmap (fun _ _ _ _ ↦ Subtype.ext_iff.mp) <| nodup_allWordsMaxLength n
+
+
+theorem mem_allWordsOfLength (n : ℕ) (w : Word α) (hw : |w| = n) : w ∈ allWordsOfLength α n := by
+  simpa using Exists.intro ⟨w, hw⟩ ⟨Fintype.complete _, rfl⟩
+
+theorem mem_allWordsMaxLength (n : ℕ) (w : Word α) (hw : |w| < n) : w ∈ allWordsMaxLength α n := by
+  induction n with
+  | zero => exact (Nat.not_lt_zero _ hw).elim
+  | succ n ih =>
+    rw [allWordsMaxLength, Multiset.mem_add]
+    rcases Order.lt_succ_iff_eq_or_lt.mp hw with (hl | hr)
+    · exact Or.inr <| mem_allWordsOfLength n w hl
+    · exact Or.inl <| ih hr
+    
+
+theorem mem_allWordsOfLength' (n : ℕ) (w : WordLengthEq α n) : w ∈ allWordsOfLength' α n := by
+  apply Multiset.mem_pmap.mpr
+  exists w.val, mem_allWordsOfLength n w.val w.prop
+
+theorem mem_allWordsMaxLength' (n : ℕ) (w : WordLengthLt α n) : w ∈ allWordsMaxLength' α n := by
+  apply Multiset.mem_pmap.mpr
+  exists w.val, mem_allWordsMaxLength n w.val w.prop
+
+
+instance {n : ℕ} : Fintype (WordLengthEq α n) :=
+  inferInstanceAs <| Fintype (Vector α n)
+
+instance {n : ℕ} : Fintype (WordLengthLt α n) :=
+  ⟨⟨allWordsMaxLength' α n, nodup_allWordsMaxLength' n⟩, mem_allWordsMaxLength' n⟩
 
 
 def Overlap (w : Word α) : Prop :=
@@ -84,13 +109,6 @@ def Overlap (w : Word α) : Prop :=
 def HasOverlap (w : Word α) : Prop :=
   ∃ (B : Word α), 0 < |B| ∧ B * B * B.take 1 <:*: w
 
-
-theorem length_odd_of_overlap (w : Word α) (hw : Overlap w) : Odd |w| := by
-  rcases hw with ⟨B, hBl, hBr⟩
-  change 1 ≤ List.length B at hBl
-  simp only [freemonoid_to_list, hBr, List.length_append, 
-             ← Nat.two_mul, List.length_take, Nat.min_eq_left hBl]
-  exists |B|
 
 theorem overlap_iff (u : Word α) : 2 < |u| ∧ u = u.take (|u| / 2) ^ 2 * u.take 1 ↔ Overlap u := by
   constructor
