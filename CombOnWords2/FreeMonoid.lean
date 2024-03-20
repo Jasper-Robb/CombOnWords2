@@ -2,6 +2,7 @@ import CombOnWords2.simp_attr
 import CombOnWords2.List
 import Mathlib.Algebra.FreeMonoid.Basic
 import Mathlib.Data.List.Join
+import Mathlib.Data.Multiset.Sort
 
 
 infixr:90 " ∘* " => MonoidHom.comp
@@ -154,9 +155,8 @@ def infixes (fm : FreeMonoid α) : FreeMonoid (FreeMonoid α) :=
   List.infixes fm
 
 
-theorem map_nonerasing {f : α → β} : NonErasing <| map f := by
-  intro _ _
-  simpa [freemonoid_to_list]
+theorem map_nonerasing {f : α → β} : NonErasing <| map f := 
+  fun _ _ ↦ by simpa [freemonoid_to_list]
 
 theorem join_map_nonerasing {f : α → FreeMonoid β} (hf : ∀ x, 0 < |f x|)
     : NonErasing <| join ∘* map f := by
@@ -169,11 +169,11 @@ section instances
 
 variable {α : Type*} [DecidableEq α] [Repr α]
 
-instance : Repr (FreeMonoid α) :=
-  inferInstanceAs <| Repr (List α)
-
 instance : Membership α (FreeMonoid α) :=
   ⟨List.Mem⟩
+
+instance : Repr (FreeMonoid α) :=
+  inferInstanceAs <| Repr (List α)
 
 instance : DecidableEq (FreeMonoid α) :=
   inferInstanceAs <| DecidableEq (List α)

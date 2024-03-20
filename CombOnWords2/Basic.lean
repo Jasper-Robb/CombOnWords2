@@ -8,20 +8,23 @@ import Mathlib.Data.Fintype.Vector
 section Defs
 
 
-variable (α : Type*) [h : Fintype α]
+abbrev Word (α : Type*) [Fintype α] := FreeMonoid α
+
+def WordLengthEq (α : Type*) [Fintype α] (n : ℕ) :=
+{w : Word α // |w| = n}
+
+def WordLengthLt (α : Type*) [Fintype α] (n : ℕ) :=
+{w : Word α // |w| < n}
 
 
-abbrev Word := FreeMonoid α
-
-def AllWordsOfLength (n : ℕ) : Multiset (Word α) :=
+@[simp]
+def allWordsOfLength (α : Type*) [h : Fintype α] (n : ℕ) : Multiset (Word α) :=
   (@Vector.fintype α h n).elems.val.map Vector.toList
 
-def AllWordsMaxLength : ℕ → Multiset (Word α)
-  | 0 => {[]}
-  | n+1 => AllWordsMaxLength n + AllWordsOfLength α (n+1)
-
-def WordMax (n : ℕ) :=
-  {w : Word α // |w| < n}
+@[simp]
+def allWordsMaxLength (α : Type*) [Fintype α] : (n : ℕ) → Multiset (Word α)
+  | 0 => 0
+  | n+1 => allWordsMaxLength α n + allWordsOfLength α n
 
 
 end Defs
@@ -35,38 +38,44 @@ def toWord (n : ℕ) (l : List (Fin n)) : Word (Fin n) := l
 infix:75 " $↑ " => toWord
 
 
-theorem length_of_mem_of_allWordsOfLength (n : ℕ) : ∀ a ∈ AllWordsOfLength α n, |a| = n := by
-  unfold AllWordsOfLength
-  rw [Multiset.forall_mem_map_iff]
-  exact fun x _ ↦ Vector.toList_length x
+theorem length_mem_allWordsOfLength (n : ℕ) : ∀ w ∈ allWordsOfLength α n, |w| = n := by
+  simpa using fun a _ ↦ a.prop
 
-theorem length_of_mem_of_allWordsMaxLength (n : ℕ) : ∀ a ∈ AllWordsMaxLength α n, |a| ≤ n := by
+theorem length_mem_allWordsMaxLength (n : ℕ) : ∀ w ∈ allWordsMaxLength α n, |w| < n := by
   induction n with
-  | zero => 
-    unfold AllWordsMaxLength
-    simp [freemonoid_to_list]
+  | zero => simp [freemonoid_to_list]
   | succ n ih =>
-    unfold AllWordsMaxLength
-    simp only [Multiset.mem_add]
+    simp only [allWordsMaxLength, Multiset.mem_add]
     rintro a (hal | har)
-    · exact Nat.le_step (ih a hal)
-    · exact (Nat.le_iff_lt_or_eq).mpr <| Or.inr <| length_of_mem_of_allWordsOfLength (n+1) a har
+    · exact Nat.lt.step (ih a hal)
+    · exact Nat.lt_succ.mpr <| Nat.le_of_eq <| length_mem_allWordsOfLength n a har
 
-theorem nodup_allWordsOfLength (n : ℕ) : Multiset.Nodup (AllWordsOfLength α n) :=
-  Multiset.Nodup.map_on (fun x _ y _ a ↦ Vector.eq x y a) Fintype.elems.nodup 
+theorem nodup_allWordsOfLength (n : ℕ) : Multiset.Nodup (allWordsOfLength α n) := 
+  Multiset.Nodup.map_on (fun x _ y _ a ↦ Vector.eq x y a) Fintype.elems.nodup
 
-theorem nodup_allWordsMaxLength (n : ℕ) : Multiset.Nodup (AllWordsMaxLength α n) := by
+theorem nodup_allWordsMaxLength (n : ℕ) : Multiset.Nodup (allWordsMaxLength α n) := by
   induction n with
-  | zero => 
-    unfold AllWordsMaxLength
-    simp
+  | zero => simp
   | succ n ih =>
-    apply (Multiset.Nodup.add_iff ih (nodup_allWordsOfLength (n + 1))).mpr
+    apply (Multiset.Nodup.add_iff ih (nodup_allWordsOfLength n)).mpr
     intro a h1 h2
-    have hla1 := length_of_mem_of_allWordsMaxLength n a h1
-    have hla2 := length_of_mem_of_allWordsOfLength (n+1) a h2
-    rw [hla2, Nat.succ_le] at hla1
-    exact LT.lt.false hla1
+    have hla1 : |a| = n := length_mem_allWordsOfLength n a h2
+    have hla2 : |a| < n := length_mem_allWordsMaxLength n a h1
+    exact LT.lt.false <| Eq.trans_lt hla1.symm hla2
+
+
+def allWordsOfLength' (α : Type*) [Fintype α] (n : ℕ) : Multiset (WordLengthEq α n) :=
+  (allWordsOfLength α n).pmap Subtype.mk (length_mem_allWordsOfLength n)
+
+def allWordsMaxLength' (α : Type*) [Fintype α] (n : ℕ) : Multiset (WordLengthLt α n) :=
+  (allWordsMaxLength α n).pmap Subtype.mk (length_mem_allWordsMaxLength n)
+
+
+theorem nodup_allWordsOfLength' (n : ℕ) : (allWordsOfLength' α n).Nodup :=
+  Multiset.Nodup.pmap (fun _ _ _ _ ↦ Subtype.ext_iff.mp) <| nodup_allWordsOfLength n
+
+theorem nodup_allWordsMaxLength' (n : ℕ) : (allWordsMaxLength' α n).Nodup :=
+  Multiset.Nodup.pmap (fun _ _ _ _ ↦ Subtype.ext_iff.mp) <| nodup_allWordsMaxLength n
 
 
 def Overlap (w : Word α) : Prop :=
