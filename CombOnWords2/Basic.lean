@@ -103,10 +103,10 @@ theorem mem_allWordsMaxLength' (n : ℕ) (w : WordLengthLt α n) : w ∈ allWord
   exists w.val, mem_allWordsMaxLength n w.val w.prop
 
 
-instance {n : ℕ} : Fintype (WordLengthEq α n) :=
+instance : Fintype (WordLengthEq α n) :=
   inferInstanceAs <| Fintype (Vector α n)
 
-instance {n : ℕ} : Fintype (WordLengthLt α n) :=
+instance : Fintype (WordLengthLt α n) :=
   ⟨⟨allWordsMaxLength' α n, nodup_allWordsMaxLength' n⟩, mem_allWordsMaxLength' n⟩
 
 
