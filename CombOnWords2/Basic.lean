@@ -62,9 +62,9 @@ theorem nodup_allWordsMaxLength (n : ℕ) : Multiset.Nodup (allWordsMaxLength α
   | succ n ih =>
     apply (Multiset.Nodup.add_iff ih (nodup_allWordsOfLength n)).mpr
     intro a h1 h2
-    have hla1 : |a| = n := length_mem_allWordsOfLength n a h2
-    have hla2 : |a| < n := length_mem_allWordsMaxLength n a h1
-    exact LT.lt.false <| Eq.trans_lt hla1.symm hla2
+    have hlaeqn : |a| = n := length_mem_allWordsOfLength n a h2
+    have hlaltn : |a| < n := length_mem_allWordsMaxLength n a h1
+    exact LT.lt.false <| Eq.trans_lt hlaeqn.symm hlaltn
 
 
 theorem nodup_allWordsOfLength' (n : ℕ) : (allWordsOfLength' α n).Nodup :=
@@ -82,10 +82,17 @@ theorem mem_allWordsMaxLength (n : ℕ) (w : Word α) (hw : |w| < n) : w ∈ all
   | zero => exact (Nat.not_lt_zero _ hw).elim
   | succ n ih =>
     rw [allWordsMaxLength, Multiset.mem_add]
-    rcases Order.lt_succ_iff_eq_or_lt.mp hw with (hl | hr)
-    · exact Or.inr <| mem_allWordsOfLength n w hl
-    · exact Or.inl <| ih hr
+    cases Order.lt_succ_iff_eq_or_lt.mp hw with
+    | inl hl => exact Or.inr <| mem_allWordsOfLength n w hl
+    | inr hr => exact Or.inl <| ih hr
     
+
+theorem mem_allWordsOfLength_iff (n : ℕ) (w : Word α) : |w| = n ↔ w ∈ allWordsOfLength α n :=
+  ⟨fun h ↦ mem_allWordsOfLength n w h, fun h ↦ length_mem_allWordsOfLength n w h⟩
+
+theorem mem_allWordsMaxLength_iff (n : ℕ) (w : Word α) : |w| < n ↔ w ∈ allWordsMaxLength α n :=
+  ⟨fun h ↦ mem_allWordsMaxLength n w h, fun h ↦ length_mem_allWordsMaxLength n w h⟩
+
 
 theorem mem_allWordsOfLength' (n : ℕ) (w : WordLengthEq α n) : w ∈ allWordsOfLength' α n := by
   apply Multiset.mem_pmap.mpr
@@ -101,6 +108,31 @@ instance {n : ℕ} : Fintype (WordLengthEq α n) :=
 
 instance {n : ℕ} : Fintype (WordLengthLt α n) :=
   ⟨⟨allWordsMaxLength' α n, nodup_allWordsMaxLength' n⟩, mem_allWordsMaxLength' n⟩
+
+
+instance [DecidablePred p] : Decidable (∃ w : Word α, |w| = n ∧ p w) := by
+  conv => rhs; rhs; intro w; rw [mem_allWordsOfLength_iff]
+  exact Multiset.decidableExistsMultiset
+
+instance [DecidablePred p] : Decidable (∃ w : Word α, |w| < n ∧ p w) := by
+  conv => rhs; rhs; intro w; rw [mem_allWordsMaxLength_iff]
+  exact Multiset.decidableExistsMultiset
+
+instance [DecidablePred p] : Decidable (∃ w : Word α, |w| ≤ n ∧ p w) := by
+  conv => rhs; rhs; intro w; rw [← Nat.lt_succ, mem_allWordsMaxLength_iff]
+  exact Multiset.decidableExistsMultiset
+
+instance [DecidablePred p] : Decidable (∀ w : Word α, |w| = n → p w) := by
+  conv => rhs; intro w; rw [mem_allWordsOfLength_iff]
+  exact Multiset.decidableForallMultiset
+
+instance [DecidablePred p] : Decidable (∀ w : Word α, |w| < n → p w) := by
+  conv => rhs; intro w; rw [mem_allWordsMaxLength_iff]
+  exact Multiset.decidableForallMultiset
+
+instance [DecidablePred p] : Decidable (∀ w : Word α, |w| ≤ n → p w) := by
+  conv => rhs; intro w; rw [← Nat.lt_succ, mem_allWordsMaxLength_iff]
+  exact Multiset.decidableForallMultiset
 
 
 def Overlap (w : Word α) : Prop :=
