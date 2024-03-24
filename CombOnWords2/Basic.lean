@@ -51,36 +51,43 @@ theorem mem_allFreeMonoidsMaxLength (n : ℕ) (w : FreeMonoid α) (hw : |w| < n)
     | inr hr => exact Or.inl <| ih hr
     
 
-theorem mem_allFreeMonoidsOfLength_iff (n : ℕ) (w : FreeMonoid α) : |w| = n ↔ w ∈ allFreeMonoidsOfLength α n :=
-  ⟨mem_allFreeMonoidsOfLength n w, length_mem_allFreeMonoidsOfLength n w⟩
+theorem mem_allFreeMonoidsOfLength_iff (n : ℕ) (w : FreeMonoid α) : w ∈ allFreeMonoidsOfLength α n ↔ |w| = n :=
+  ⟨length_mem_allFreeMonoidsOfLength n w, mem_allFreeMonoidsOfLength n w⟩
 
-theorem mem_allFreeMonoidsMaxLength_iff (n : ℕ) (w : FreeMonoid α) : |w| < n ↔ w ∈ allFreeMonoidsMaxLength α n :=
-  ⟨mem_allFreeMonoidsMaxLength n w, length_mem_allFreeMonoidsMaxLength n w⟩
+theorem mem_allFreeMonoidsMaxLength_iff (n : ℕ) (w : FreeMonoid α) : w ∈ allFreeMonoidsMaxLength α n ↔ |w| < n :=
+  ⟨length_mem_allFreeMonoidsMaxLength n w, mem_allFreeMonoidsMaxLength n w⟩
 
 
-instance [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |w| = n ∧ p w) := by
-  conv => rhs; rhs; intro w; rw [mem_allFreeMonoidsOfLength_iff]
-  exact Multiset.decidableExistsMultiset
+instance {p : β → Prop} [DecidablePred p] {m : Multiset β} : Decidable (∃ x ∈ m, p x) :=
+  Multiset.decidableExistsMultiset
 
-instance [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |w| < n ∧ p w) := by
-  conv => rhs; rhs; intro w; rw [mem_allFreeMonoidsMaxLength_iff]
-  exact Multiset.decidableExistsMultiset
+instance {p : β → Prop} [DecidablePred p] {m : Multiset β} : Decidable (∀ x ∈ m, p x) :=
+  Multiset.decidableForallMultiset
 
-instance [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |w| ≤ n ∧ p w) := by
-  conv => rhs; rhs; intro w; rw [← Nat.lt_succ, mem_allFreeMonoidsMaxLength_iff]
-  exact Multiset.decidableExistsMultiset
 
-instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| = n → p w) := by
-  conv => rhs; intro w; rw [mem_allFreeMonoidsOfLength_iff]
-  exact Multiset.decidableForallMultiset
+instance [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |w| = n ∧ p w) :=
+  decidable_of_decidable_of_iff <| 
+    exists_congr fun w ↦ and_congr_left fun _ ↦ mem_allFreeMonoidsOfLength_iff n w
 
-instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| < n → p w) := by
-  conv => rhs; intro w; rw [mem_allFreeMonoidsMaxLength_iff]
-  exact Multiset.decidableForallMultiset
+instance [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |w| < n ∧ p w) :=
+  decidable_of_decidable_of_iff <| 
+    exists_congr fun w ↦ and_congr_left fun _ ↦ mem_allFreeMonoidsMaxLength_iff n w
 
-instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| ≤ n → p w) := by
-  conv => rhs; intro w; rw [← Nat.lt_succ, mem_allFreeMonoidsMaxLength_iff]
-  exact Multiset.decidableForallMultiset
+instance [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |w| ≤ n ∧ p w) :=
+  decidable_of_decidable_of_iff <| 
+    exists_congr fun w ↦ and_congr_left fun _ ↦ (mem_allFreeMonoidsMaxLength_iff (n+1) w).trans Nat.lt_succ
+
+instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| = n → p w) :=
+  decidable_of_decidable_of_iff <| 
+    forall_congr' fun w ↦ imp_congr_left <| mem_allFreeMonoidsOfLength_iff n w
+
+instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| < n → p w) :=
+  decidable_of_decidable_of_iff <| 
+    forall_congr' fun w ↦ imp_congr_left <| mem_allFreeMonoidsMaxLength_iff n w
+
+instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| ≤ n → p w) :=
+  decidable_of_decidable_of_iff <| 
+    forall_congr' fun w ↦ imp_congr_left <| (mem_allFreeMonoidsMaxLength_iff (n+1) w).trans Nat.lt_succ
 
 
 theorem chapter1_question2 (u : FreeMonoid α) (hu : Overlap u)
