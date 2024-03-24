@@ -125,11 +125,12 @@ theorem μ_nonerasing : NonErasing μ :=
 
 theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v)
     : HasOverlap (μ v) := by
-  rcases hv with ⟨B, hBl, hBr⟩
-  exists μ B
-  apply And.intro
-  · exact μ_nonerasing B hBl
-  · have : μ B * μ B * (μ B).take 1 <*: μ B * μ B * μ (B.take 1) := by
+  rcases hv with ⟨u, ⟨B, hBl, hBr⟩, hur⟩
+  exists μ B * μ B * (μ B).take 1
+  constructor
+  · exact Exists.intro (μ B) ⟨μ_nonerasing B hBl, rfl⟩
+  · have : μ B * μ B * (μ B).take 1 <*: μ u := by
+      simp only [hBr, map_mul]
       apply (List.prefix_append_right_inj (μ B * μ B)).mpr
       cases B with
       | nil => contradiction
@@ -139,8 +140,7 @@ theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v)
         simp only [freemonoid_to_list, List.take_cons_succ, List.take_zero]
         rw [List.take_append_of_le_length]
         all_goals fin_cases x <;> decide
-    apply List.IsInfix.trans <| List.IsPrefix.isInfix this
-    simpa only [← map_mul] using is_infix_congr hBr μ
+    exact List.IsInfix.trans (List.IsPrefix.isInfix this) <| is_infix_congr hur μ
 
 
 def complement : Monoid.End (FreeMonoid (Fin 2)) :=

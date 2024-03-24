@@ -16,7 +16,10 @@ namespace FreeMonoid
 def toList' (fm : FreeMonoid α) : List α := fm
 
 @[freemonoid_to_list]
-def one_eq_list_nil : (1 : FreeMonoid α) = ([] : List α) := rfl
+theorem one_eq_list_nil : (1 : FreeMonoid α) = ([] : List α) := rfl
+
+@[freemonoid_to_list]
+theorem of_eq_list_singleton {x : α} : of x = [x] := rfl
 
 @[freemonoid_to_list]
 theorem mul_eq_list_append (fm₁ fm₂ : FreeMonoid α)
@@ -192,7 +195,7 @@ def Overlap (fm : FreeMonoid α) : Prop :=
   ∃ B : FreeMonoid α, 0 < |B| ∧ fm = B * B * B.take 1
 
 def HasOverlap (fm : FreeMonoid α) : Prop :=
-  ∃ (B : FreeMonoid α), 0 < |B| ∧ B * B * B.take 1 <:*: fm
+  ∃ u : FreeMonoid α, Overlap u ∧ u <:*: fm
 
 
 theorem overlap_iff (u : FreeMonoid α) : 2 < |u| ∧ u = u.take (|u| / 2) ^ 2 * u.take 1 ↔ Overlap u := by
@@ -224,30 +227,14 @@ theorem overlap_iff (u : FreeMonoid α) : 2 < |u| ∧ u = u.take (|u| / 2) ^ 2 *
         rwa [hBr, List.append_assoc, List.take_append_of_le_length]
       rwa [sq, huB₁, huB₂]
 
-theorem has_overlap_iff (fm : FreeMonoid α) : (∃ u, Overlap u ∧ u <:*: fm) ↔ HasOverlap fm := by
-  constructor
-  · intro ⟨_, ⟨B, hBl, hBr⟩, _⟩
-    exists B
-    exact ⟨hBl, by rwa [← hBr]⟩
-  · intro ⟨B, _, hBr⟩
-    exists B * B * B.take 1
-    exact ⟨by exists B;, hBr⟩
-
-theorem has_overlap_iff' (fm : FreeMonoid α) :
-    (∃ u ∈ fm.infixes, Overlap u) ↔ HasOverlap fm := by
-  constructor
-  · intro ⟨u, hul, hur⟩
-    apply (has_overlap_iff fm).mp
-    exists u
-    exact ⟨hur, (List.mem_infixes u fm).mp hul⟩
-  · intro h
-    rcases (has_overlap_iff fm).mpr h with ⟨u, hul, hur⟩
-    exists u
-    exact ⟨(List.mem_infixes u fm).mpr hur, hul⟩
+theorem has_overlap_iff' (fm : FreeMonoid α) 
+    : (∃ u ∈ fm.infixes, Overlap u) ↔ HasOverlap fm :=
+  ⟨fun ⟨u, hul, hur⟩ ↦ Exists.intro u ⟨hur, (List.mem_infixes u fm).mp hul⟩,
+   fun ⟨u, hul, hur⟩ ↦ Exists.intro u ⟨(List.mem_infixes u fm).mpr hur, hul⟩⟩
 
 theorem factor_no_overlap_of_no_overlap (fm₁ fm₂ : FreeMonoid α) (hw : ¬HasOverlap fm₂) (hvw : fm₁ <:*: fm₂)
     : ¬HasOverlap fm₁ :=
-  fun ⟨B, hBl, hBr⟩ => hw <| Exists.intro B <| ⟨hBl, List.IsInfix.trans hBr hvw⟩
+  fun ⟨u, hul, hur⟩ => hw <| Exists.intro u <| ⟨hul, List.IsInfix.trans hur hvw⟩
 
 
 instance [DecidableEq α] (fm : FreeMonoid α) : Decidable (Overlap fm) := 
