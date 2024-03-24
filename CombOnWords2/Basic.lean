@@ -38,48 +38,48 @@ theorem length_mem_allFreeMonoidsMaxLength (n : ℕ) : ∀ w ∈ allFreeMonoidsM
     · exact Nat.lt_succ.mpr <| Nat.le_of_eq <| length_mem_allFreeMonoidsOfLength n a har
 
 
-theorem mem_allWordsOfLength (n : ℕ) (w : FreeMonoid α) (hw : |w| = n) : w ∈ allFreeMonoidsOfLength α n := by
+theorem mem_allFreeMonoidsOfLength (n : ℕ) (w : FreeMonoid α) (hw : |w| = n) : w ∈ allFreeMonoidsOfLength α n := by
   simpa [allFreeMonoidsOfLength] using Exists.intro ⟨w, hw⟩ ⟨Fintype.complete _, rfl⟩
 
-theorem mem_allWordsMaxLength (n : ℕ) (w : FreeMonoid α) (hw : |w| < n) : w ∈ allFreeMonoidsMaxLength α n := by
+theorem mem_allFreeMonoidsMaxLength (n : ℕ) (w : FreeMonoid α) (hw : |w| < n) : w ∈ allFreeMonoidsMaxLength α n := by
   induction n with
   | zero => exact (Nat.not_lt_zero _ hw).elim
   | succ n ih =>
     rw [allFreeMonoidsMaxLength, Multiset.mem_add]
     cases Order.lt_succ_iff_eq_or_lt.mp hw with
-    | inl hl => exact Or.inr <| mem_allWordsOfLength n w hl
+    | inl hl => exact Or.inr <| mem_allFreeMonoidsOfLength n w hl
     | inr hr => exact Or.inl <| ih hr
     
 
-theorem mem_allWordsOfLength_iff (n : ℕ) (w : FreeMonoid α) : |w| = n ↔ w ∈ allFreeMonoidsOfLength α n :=
-  ⟨mem_allWordsOfLength n w, length_mem_allFreeMonoidsOfLength n w⟩
+theorem mem_allFreeMonoidsOfLength_iff (n : ℕ) (w : FreeMonoid α) : |w| = n ↔ w ∈ allFreeMonoidsOfLength α n :=
+  ⟨mem_allFreeMonoidsOfLength n w, length_mem_allFreeMonoidsOfLength n w⟩
 
-theorem mem_allWordsMaxLength_iff (n : ℕ) (w : FreeMonoid α) : |w| < n ↔ w ∈ allFreeMonoidsMaxLength α n :=
-  ⟨mem_allWordsMaxLength n w, length_mem_allFreeMonoidsMaxLength n w⟩
+theorem mem_allFreeMonoidsMaxLength_iff (n : ℕ) (w : FreeMonoid α) : |w| < n ↔ w ∈ allFreeMonoidsMaxLength α n :=
+  ⟨mem_allFreeMonoidsMaxLength n w, length_mem_allFreeMonoidsMaxLength n w⟩
 
 
 instance [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |w| = n ∧ p w) := by
-  conv => rhs; rhs; intro w; rw [mem_allWordsOfLength_iff]
+  conv => rhs; rhs; intro w; rw [mem_allFreeMonoidsOfLength_iff]
   exact Multiset.decidableExistsMultiset
 
 instance [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |w| < n ∧ p w) := by
-  conv => rhs; rhs; intro w; rw [mem_allWordsMaxLength_iff]
+  conv => rhs; rhs; intro w; rw [mem_allFreeMonoidsMaxLength_iff]
   exact Multiset.decidableExistsMultiset
 
 instance [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |w| ≤ n ∧ p w) := by
-  conv => rhs; rhs; intro w; rw [← Nat.lt_succ, mem_allWordsMaxLength_iff]
+  conv => rhs; rhs; intro w; rw [← Nat.lt_succ, mem_allFreeMonoidsMaxLength_iff]
   exact Multiset.decidableExistsMultiset
 
 instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| = n → p w) := by
-  conv => rhs; intro w; rw [mem_allWordsOfLength_iff]
+  conv => rhs; intro w; rw [mem_allFreeMonoidsOfLength_iff]
   exact Multiset.decidableForallMultiset
 
 instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| < n → p w) := by
-  conv => rhs; intro w; rw [mem_allWordsMaxLength_iff]
+  conv => rhs; intro w; rw [mem_allFreeMonoidsMaxLength_iff]
   exact Multiset.decidableForallMultiset
 
 instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| ≤ n → p w) := by
-  conv => rhs; intro w; rw [← Nat.lt_succ, mem_allWordsMaxLength_iff]
+  conv => rhs; intro w; rw [← Nat.lt_succ, mem_allFreeMonoidsMaxLength_iff]
   exact Multiset.decidableForallMultiset
 
 
