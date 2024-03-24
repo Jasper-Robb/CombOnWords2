@@ -6,206 +6,85 @@ import Mathlib.Data.Fintype.Vector
 import Mathlib.Data.Nat.SuccPred
 
 
-abbrev Word (α : Type*) [Fintype α] := FreeMonoid α
-
-def WordLengthEq (α : Type*) [Fintype α] (n : ℕ) :=
-{w : Word α // |w| = n}
-
-def WordLengthLt (α : Type*) [Fintype α] (n : ℕ) :=
-{w : Word α // |w| < n}
-
-
-@[simp]
-def allWordsOfLength (α : Type*) [h : Fintype α] (n : ℕ) : Multiset (Word α) :=
+def allFreeMonoidsOfLength (α : Type*) [h : Fintype α] (n : ℕ) : Multiset (FreeMonoid α) :=
   (@Vector.fintype α h n).elems.val.map Vector.toList
 
-@[simp]
-def allWordsMaxLength (α : Type*) [Fintype α] : (n : ℕ) → Multiset (Word α)
+def allFreeMonoidsMaxLength (α : Type*) [Fintype α] : (n : ℕ) → Multiset (FreeMonoid α)
   | 0 => 0
-  | n+1 => allWordsMaxLength α n + allWordsOfLength α n
+  | n+1 => allFreeMonoidsMaxLength α n + allFreeMonoidsOfLength α n
+
+
+open FreeMonoid
 
 
 variable {α : Type*} [Fintype α] 
 
 
-def toWord (n : ℕ) (l : List (Fin n)) : Word (Fin n) := l
+def toFinFreeMonoid (n : ℕ) (l : List (Fin n)) : FreeMonoid (Fin n) := l
 
-infix:75 " $↑ " => toWord
+infix:75 " $↑ " => toFinFreeMonoid
 
 
-theorem length_mem_allWordsOfLength (n : ℕ) : ∀ w ∈ allWordsOfLength α n, |w| = n := by
-  simpa using fun a _ ↦ a.prop
+theorem length_mem_allFreeMonoidsOfLength (n : ℕ) : ∀ w ∈ allFreeMonoidsOfLength α n, |w| = n := by
+  simpa [allFreeMonoidsOfLength] using fun a _ ↦ a.prop
 
-theorem length_mem_allWordsMaxLength (n : ℕ) : ∀ w ∈ allWordsMaxLength α n, |w| < n := by
+theorem length_mem_allFreeMonoidsMaxLength (n : ℕ) : ∀ w ∈ allFreeMonoidsMaxLength α n, |w| < n := by
   induction n with
-  | zero => simp [freemonoid_to_list]
+  | zero => simp [allFreeMonoidsMaxLength, freemonoid_to_list]
   | succ n ih =>
-    simp only [allWordsMaxLength, Multiset.mem_add]
+    simp only [allFreeMonoidsMaxLength, Multiset.mem_add]
     rintro a (hal | har)
     · exact Nat.lt.step (ih a hal)
-    · exact Nat.lt_succ.mpr <| Nat.le_of_eq <| length_mem_allWordsOfLength n a har
+    · exact Nat.lt_succ.mpr <| Nat.le_of_eq <| length_mem_allFreeMonoidsOfLength n a har
 
 
-def allWordsOfLength' (α : Type*) [Fintype α] (n : ℕ) : Multiset (WordLengthEq α n) :=
-  (allWordsOfLength α n).pmap Subtype.mk (length_mem_allWordsOfLength n)
+theorem mem_allWordsOfLength (n : ℕ) (w : FreeMonoid α) (hw : |w| = n) : w ∈ allFreeMonoidsOfLength α n := by
+  simpa [allFreeMonoidsOfLength] using Exists.intro ⟨w, hw⟩ ⟨Fintype.complete _, rfl⟩
 
-def allWordsMaxLength' (α : Type*) [Fintype α] (n : ℕ) : Multiset (WordLengthLt α n) :=
-  (allWordsMaxLength α n).pmap Subtype.mk (length_mem_allWordsMaxLength n)
-
-
-theorem nodup_allWordsOfLength (n : ℕ) : Multiset.Nodup (allWordsOfLength α n) := 
-  Multiset.Nodup.map_on (fun x _ y _ a ↦ Vector.eq x y a) Fintype.elems.nodup
-
-theorem nodup_allWordsMaxLength (n : ℕ) : Multiset.Nodup (allWordsMaxLength α n) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    apply (Multiset.Nodup.add_iff ih (nodup_allWordsOfLength n)).mpr
-    intro a h1 h2
-    have hlaeqn : |a| = n := length_mem_allWordsOfLength n a h2
-    have hlaltn : |a| < n := length_mem_allWordsMaxLength n a h1
-    exact LT.lt.false <| Eq.trans_lt hlaeqn.symm hlaltn
-
-
-theorem nodup_allWordsOfLength' (n : ℕ) : (allWordsOfLength' α n).Nodup :=
-  Multiset.Nodup.pmap (fun _ _ _ _ ↦ Subtype.ext_iff.mp) <| nodup_allWordsOfLength n
-
-theorem nodup_allWordsMaxLength' (n : ℕ) : (allWordsMaxLength' α n).Nodup :=
-  Multiset.Nodup.pmap (fun _ _ _ _ ↦ Subtype.ext_iff.mp) <| nodup_allWordsMaxLength n
-
-
-theorem mem_allWordsOfLength (n : ℕ) (w : Word α) (hw : |w| = n) : w ∈ allWordsOfLength α n := by
-  simpa using Exists.intro ⟨w, hw⟩ ⟨Fintype.complete _, rfl⟩
-
-theorem mem_allWordsMaxLength (n : ℕ) (w : Word α) (hw : |w| < n) : w ∈ allWordsMaxLength α n := by
+theorem mem_allWordsMaxLength (n : ℕ) (w : FreeMonoid α) (hw : |w| < n) : w ∈ allFreeMonoidsMaxLength α n := by
   induction n with
   | zero => exact (Nat.not_lt_zero _ hw).elim
   | succ n ih =>
-    rw [allWordsMaxLength, Multiset.mem_add]
+    rw [allFreeMonoidsMaxLength, Multiset.mem_add]
     cases Order.lt_succ_iff_eq_or_lt.mp hw with
     | inl hl => exact Or.inr <| mem_allWordsOfLength n w hl
     | inr hr => exact Or.inl <| ih hr
     
 
-theorem mem_allWordsOfLength_iff (n : ℕ) (w : Word α) : |w| = n ↔ w ∈ allWordsOfLength α n :=
-  ⟨fun h ↦ mem_allWordsOfLength n w h, fun h ↦ length_mem_allWordsOfLength n w h⟩
+theorem mem_allWordsOfLength_iff (n : ℕ) (w : FreeMonoid α) : |w| = n ↔ w ∈ allFreeMonoidsOfLength α n :=
+  ⟨mem_allWordsOfLength n w, length_mem_allFreeMonoidsOfLength n w⟩
 
-theorem mem_allWordsMaxLength_iff (n : ℕ) (w : Word α) : |w| < n ↔ w ∈ allWordsMaxLength α n :=
-  ⟨fun h ↦ mem_allWordsMaxLength n w h, fun h ↦ length_mem_allWordsMaxLength n w h⟩
-
-
-theorem mem_allWordsOfLength' (n : ℕ) (w : WordLengthEq α n) : w ∈ allWordsOfLength' α n := by
-  apply Multiset.mem_pmap.mpr
-  exists w.val, mem_allWordsOfLength n w.val w.prop
-
-theorem mem_allWordsMaxLength' (n : ℕ) (w : WordLengthLt α n) : w ∈ allWordsMaxLength' α n := by
-  apply Multiset.mem_pmap.mpr
-  exists w.val, mem_allWordsMaxLength n w.val w.prop
+theorem mem_allWordsMaxLength_iff (n : ℕ) (w : FreeMonoid α) : |w| < n ↔ w ∈ allFreeMonoidsMaxLength α n :=
+  ⟨mem_allWordsMaxLength n w, length_mem_allFreeMonoidsMaxLength n w⟩
 
 
-instance : Fintype (WordLengthEq α n) :=
-  inferInstanceAs <| Fintype (Vector α n)
-
-instance : Fintype (WordLengthLt α n) :=
-  ⟨⟨allWordsMaxLength' α n, nodup_allWordsMaxLength' n⟩, mem_allWordsMaxLength' n⟩
-
-
-instance [DecidablePred p] : Decidable (∃ w : Word α, |w| = n ∧ p w) := by
+instance [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |w| = n ∧ p w) := by
   conv => rhs; rhs; intro w; rw [mem_allWordsOfLength_iff]
   exact Multiset.decidableExistsMultiset
 
-instance [DecidablePred p] : Decidable (∃ w : Word α, |w| < n ∧ p w) := by
+instance [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |w| < n ∧ p w) := by
   conv => rhs; rhs; intro w; rw [mem_allWordsMaxLength_iff]
   exact Multiset.decidableExistsMultiset
 
-instance [DecidablePred p] : Decidable (∃ w : Word α, |w| ≤ n ∧ p w) := by
+instance [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |w| ≤ n ∧ p w) := by
   conv => rhs; rhs; intro w; rw [← Nat.lt_succ, mem_allWordsMaxLength_iff]
   exact Multiset.decidableExistsMultiset
 
-instance [DecidablePred p] : Decidable (∀ w : Word α, |w| = n → p w) := by
+instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| = n → p w) := by
   conv => rhs; intro w; rw [mem_allWordsOfLength_iff]
   exact Multiset.decidableForallMultiset
 
-instance [DecidablePred p] : Decidable (∀ w : Word α, |w| < n → p w) := by
+instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| < n → p w) := by
   conv => rhs; intro w; rw [mem_allWordsMaxLength_iff]
   exact Multiset.decidableForallMultiset
 
-instance [DecidablePred p] : Decidable (∀ w : Word α, |w| ≤ n → p w) := by
+instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| ≤ n → p w) := by
   conv => rhs; intro w; rw [← Nat.lt_succ, mem_allWordsMaxLength_iff]
   exact Multiset.decidableForallMultiset
 
 
-def Overlap (w : Word α) : Prop :=
-  ∃ (B : Word α), 0 < |B| ∧ w = B * B * B.take 1
-
-def HasOverlap (w : Word α) : Prop :=
-  ∃ (B : Word α), 0 < |B| ∧ B * B * B.take 1 <:*: w
-
-
-theorem overlap_iff (u : Word α) : 2 < |u| ∧ u = u.take (|u| / 2) ^ 2 * u.take 1 ↔ Overlap u := by
-  constructor
-  · intro ⟨hlu, hu⟩
-    exists u.take (|u| / 2)
-    simp only [freemonoid_to_list, sq] at *
-    constructor
-    · simp only [List.length_take, lt_min_iff]
-      exact ⟨Nat.div_pos (Nat.le_of_lt hlu) Nat.two_pos, Nat.zero_lt_of_lt hlu⟩
-    · nth_rewrite 1 [hu]
-      rw [List.append_right_inj, List.take_take, Nat.min_eq_left]
-      exact @Nat.div_le_div_right 2 |u| 2 <| Nat.le_of_lt hlu
-  · intro ⟨B, hBl, hBr⟩
-    simp only [freemonoid_to_list] at *
-    constructor
-    · simp only [hBr, List.length_append, List.length_take, Nat.min_eq_left hBl]
-      apply lt_add_of_tsub_lt_right
-      simpa [← Nat.two_mul] using one_lt_mul_of_lt_of_le Nat.one_lt_two hBl
-    · change 1 ≤ List.length B at hBl
-      have huB₁ : List.take (List.length u / 2) u = B := by
-        rw [hBr, List.append_assoc, List.take_append_of_le_length]
-        all_goals simp only [List.length_append, List.length_take, Nat.min_eq_left hBl,
-                             ← add_assoc, ← Nat.two_mul, zero_lt_two, Nat.add_div, 
-                             Nat.mul_div_right, Nat.mul_mod_right]
-        apply List.take_length
-        rfl
-      have huB₂ : List.take 1 u = List.take 1 B := by
-        rwa [hBr, List.append_assoc, List.take_append_of_le_length]
-      rwa [sq, huB₁, huB₂]
-
-theorem has_overlap_iff (w : Word α) : (∃ u, Overlap u ∧ u <:*: w) ↔ HasOverlap w := by
-  constructor
-  · intro ⟨_, ⟨B, hBl, hBr⟩, _⟩
-    exists B
-    exact ⟨hBl, by rwa [← hBr]⟩
-  · intro ⟨B, _, hBr⟩
-    exists B * B * B.take 1
-    exact ⟨by exists B;, hBr⟩
-
-theorem has_overlap_iff' (w : Word α) :
-    (∃ u ∈ w.infixes, Overlap u) ↔ HasOverlap w := by
-  constructor
-  · intro ⟨u, hul, hur⟩
-    apply (has_overlap_iff w).mp
-    exists u
-    exact ⟨hur, (List.mem_infixes u w).mp hul⟩
-  · intro h
-    rcases (has_overlap_iff w).mpr h with ⟨u, hul, hur⟩
-    exists u
-    exact ⟨(List.mem_infixes u w).mpr hur, hul⟩
-
-theorem factor_no_overlap_of_no_overlap (v w : Word α) (hw : ¬HasOverlap w) (hvw : v <:*: w)
-    : ¬HasOverlap v :=
-  fun ⟨B, hBl, hBr⟩ => hw <| Exists.intro B <| ⟨hBl, List.IsInfix.trans hBr hvw⟩
-
-
-instance [DecidableEq α] (u : Word α) : Decidable (Overlap u) := 
-  decidable_of_decidable_of_iff <| overlap_iff u
-
-instance [DecidableEq α] (u : Word α) : Decidable (HasOverlap u) :=
-  decidable_of_decidable_of_iff <| has_overlap_iff' u
-
-
-theorem chapter1_question2 (u : Word α) (hu : Overlap u)
-    : ∃ (v w z : Word α), u = w * v ∧ u = z * w ∧ |w| > |v| := by
+theorem chapter1_question2 (u : FreeMonoid α) (hu : Overlap u)
+    : ∃ (v w z : FreeMonoid α), u = w * v ∧ u = z * w ∧ |w| > |v| := by
   rcases hu with ⟨B, hBl, hBr⟩
   exists (B.drop 1 * B.take 1), (B * B.take 1), B
   apply And.intro
@@ -216,9 +95,9 @@ theorem chapter1_question2 (u : Word α) (hu : Overlap u)
   · simpa [freemonoid_to_list] using Nat.sub_lt hBl Nat.one_pos
 
 
-theorem chapter1_question3 (u : Word α) (hu : Overlap u)
-    : (∃ (x : Word α), 0 < |x| ∧ u = x * x * x) ∨ 
-      (∃ (x y : Word α), 0 < |x| ∧ 0 < |y| ∧ u = x * y * x * y * x) := by
+theorem chapter1_question3 (u : FreeMonoid α) (hu : Overlap u)
+    : (∃ (x : FreeMonoid α), 0 < |x| ∧ u = x * x * x) ∨ 
+      (∃ (x y : FreeMonoid α), 0 < |x| ∧ 0 < |y| ∧ u = x * y * x * y * x) := by
   rcases hu with ⟨B, hBr, hBl⟩
   cases eq_or_ne |B| 1 with
   | inl h =>
@@ -238,13 +117,13 @@ theorem chapter1_question3 (u : Word α) (hu : Overlap u)
       simpa only [freemonoid_to_list, List.take_append_drop]
 
 
-def μ : Monoid.End (Word (Fin 2)) := 
-  FreeMonoid.join ∘* FreeMonoid.map (fun x => if x = 0 then [0, 1] else [1, 0])
+def μ : Monoid.End (FreeMonoid (Fin 2)) := 
+  join ∘* map (fun x => if x = 0 then [0, 1] else [1, 0])
 
-theorem μ_nonerasing : FreeMonoid.NonErasing μ :=
-  FreeMonoid.join_map_nonerasing fun x => by fin_cases x <;> exact Nat.two_pos
+theorem μ_nonerasing : NonErasing μ :=
+  join_map_nonerasing fun x => by fin_cases x <;> exact Nat.two_pos
 
-theorem chapter1_question4 (v : Word (Fin 2)) (hv : HasOverlap v)
+theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v)
     : HasOverlap (μ v) := by
   rcases hv with ⟨B, hBl, hBr⟩
   exists μ B
@@ -255,37 +134,37 @@ theorem chapter1_question4 (v : Word (Fin 2)) (hv : HasOverlap v)
       cases B with
       | nil => contradiction
       | cons x xs =>
-        conv => lhs; change (μ (FreeMonoid.ofList (x :: xs))).take 1
-        rw [FreeMonoid.ofList_cons, map_mul]
+        conv => lhs; change (μ (ofList (x :: xs))).take 1
+        rw [ofList_cons, map_mul]
         simp only [freemonoid_to_list, List.take_cons_succ, List.take_zero]
         rw [List.take_append_of_le_length]
         all_goals fin_cases x <;> decide
     apply List.IsInfix.trans <| List.IsPrefix.isInfix this
-    simpa only [← map_mul] using FreeMonoid.is_infix_congr hBr μ
+    simpa only [← map_mul] using is_infix_congr hBr μ
 
 
-def complement : Monoid.End (Word (Fin 2)) :=
-  FreeMonoid.map fun x => (1 - x)
+def complement : Monoid.End (FreeMonoid (Fin 2)) :=
+  map fun x => (1 - x)
 
 prefix:100 "~" => complement
 
 @[simp]
-theorem complement_complement (w : Word (Fin 2)) : ~(~w) = w := by
-  change (complement ∘* complement) w = (MonoidHom.id (Word (Fin 2))) w
+theorem complement_complement (w : FreeMonoid (Fin 2)) : ~(~w) = w := by
+  change (complement ∘* complement) w = (MonoidHom.id (FreeMonoid (Fin 2))) w
   congr
-  exact FreeMonoid.hom_eq fun x => by fin_cases x <;> rfl
+  exact hom_eq fun x => by fin_cases x <;> rfl
 
 @[simp]
-theorem length_complement (w : Word (Fin 2)) : |~w| = |w| :=
+theorem length_complement (w : FreeMonoid (Fin 2)) : |~w| = |w| :=
   List.length_map w (fun x => 1 - x)
 
-def X : ℕ → Word (Fin 2)
+def X : ℕ → FreeMonoid (Fin 2)
   | 0   => [0]
   | n+1 => X n * ~X n
 
 theorem chapter1_question7 (n : ℕ)
-    : (μ^n : Monoid.End (Word (Fin 2))) [0] = X n ∧ 
-      (μ^n : Monoid.End (Word (Fin 2))) [1] = ~X n := by
+    : (μ^n : Monoid.End (FreeMonoid (Fin 2))) [0] = X n ∧ 
+      (μ^n : Monoid.End (FreeMonoid (Fin 2))) [1] = ~X n := by
   induction n with
   | zero => exact ⟨rfl, rfl⟩
   | succ k ih =>
