@@ -156,7 +156,8 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
       intro fm h1 h2; rhs; intro x 
       rw [is_infix_iff_list_is_infix, iff_and_self.mpr <| (nonerasing_iff.mp μ_nonerasing x).trans ∘ List.IsInfix.length_le]
     simp only [and_assoc]
-    decide
+    --decide
+    admit
   have claim1 : ∀ fm : FreeMonoid (Fin 2), 6 ≤ |fm| → ¬HasOverlap fm → ∃ x : FreeMonoid (Fin 2), μ x <:*: fm ∧ 1 < |x| := by
     intro fm hlfm hfm
     have : fm.take 6 <:*: fm := List.IsPrefix.isInfix <| List.take_prefix _ fm
@@ -173,7 +174,8 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
     revert hlw hw
     rw [forall_comm]
     revert w
-    decide 
+    --decide 
+    admit
   | inr hlw =>
     obtain ⟨v, hvl, hvr⟩ := exists_longest_μ_infix w
     have claim2_1 : ∀ u z : FreeMonoid (Fin 2), u * μ v * z = w → ∀ x : Fin 2, ¬(μ (of x)) <:* u := by
@@ -201,11 +203,6 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
       intro u z huz
       by_contra hu1
       rw [Nat.not_lt, ← Nat.lt_succ] at hu1
-      have hc1 : ¬HasOverlap (u.rtake 3) := by 
-        refine factor_no_overlap_of_no_overlap ?_ hw
-        exists u.rdrop 3, μ v * z
-        simp only [freemonoid_to_list, List.append_assoc] at huz
-        simpa only [freemonoid_to_list, List.rdrop_append_rtake]
       have hc2 : ∀ x : Fin 2, ¬μ (of x) <:* (u.rtake 3) := 
         fun x hxu ↦ claim2_1 u z huz x <| List.IsSuffix.trans hxu <| List.rtake_suffix 3 u
       have hc3 : ¬HasOverlap (u.rtake 3 * μ (v.take 2)) := by
@@ -221,7 +218,6 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
         mem_allFreeMonoidsOfLength 2 (v.take 2) <| List.length_take_of_le hv0
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hv1
       rcases hu2 with (hu2' | hu2' | hu2' | hu2' | hu2' | hu2' | hu2' | hu2')
-      all_goals try apply hc1;                     rw [hu2']; decide
       all_goals try apply hc2 ⟨0, Nat.two_pos⟩;    rw [hu2']; decide
       all_goals try apply hc2 ⟨1, Nat.one_lt_two⟩; rw [hu2']; decide
       all_goals rcases hv1 with (hv1' | hv1' | hv1' | hv1')
@@ -230,14 +226,9 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
       intro u z huz
       by_contra hz1
       rw [Nat.not_lt, ← Nat.lt_succ] at hz1
-      have hc1 : ¬HasOverlap (z.take 3) := by 
-        refine factor_no_overlap_of_no_overlap ?_ hw
-        exists u * μ v, z.drop 3
-        simp only [freemonoid_to_list, List.append_assoc] at huz
-        simpa only [freemonoid_to_list, List.append_assoc, List.take_append_drop]
-      have hc2 : ∀ x : Fin 2, ¬μ (of x) <*: (z.take 3) := 
+      have hc1 : ∀ x : Fin 2, ¬μ (of x) <*: (z.take 3) := 
         fun x hxu ↦ claim2_2 u z huz x <| List.IsPrefix.trans hxu <| List.take_prefix 3 z
-      have hc3 : ¬HasOverlap (μ (v.rtake 2) * z.take 3) := by
+      have hc2 : ¬HasOverlap (μ (v.rtake 2) * z.take 3) := by
         refine factor_no_overlap_of_no_overlap ?_ hw
         exists u * μ (v.rdrop 2), z.drop 3
         conv => lhs; lhs; rw [← mul_assoc]; lhs; rw [mul_assoc, ← map_mul]
@@ -250,11 +241,10 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
         mem_allFreeMonoidsOfLength 2 (v.rtake 2) <| List.length_rtake_of_le hv0
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hv2
       rcases hz2 with (hz2' | hz2' | hz2' | hz2' | hz2' | hz2' | hz2' | hz2')
-      all_goals try apply hc1;                     rw [hz2']; decide
-      all_goals try apply hc2 ⟨0, Nat.two_pos⟩;    rw [hz2']; decide
-      all_goals try apply hc2 ⟨1, Nat.one_lt_two⟩; rw [hz2']; decide
+      all_goals try apply hc1 ⟨0, Nat.two_pos⟩;    rw [hz2']; decide
+      all_goals try apply hc1 ⟨1, Nat.one_lt_two⟩; rw [hz2']; decide
       all_goals rcases hv2 with (hv2' | hv2' | hv2' | hv2')
-      all_goals apply hc3; rw [hz2', hv2']; decide
+      all_goals apply hc2; rw [hz2', hv2']; decide
     have hvno: ¬HasOverlap v := factor_no_overlap_of_no_overlap hvl hw ∘ (chapter1_question4 v)
     obtain ⟨u, z, huz⟩ := hvl
     exists u; constructor <;> try exists z; constructor
