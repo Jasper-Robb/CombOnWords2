@@ -201,9 +201,9 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
       intro u z huz
       by_contra hu1
       rw [Nat.not_lt, ← Nat.lt_succ] at hu1
-      have hc2 : ∀ x : Fin 2, ¬μ (of x) <:* (u.rtake 3) := 
+      have hc1 : ∀ x : Fin 2, ¬μ (of x) <:* (u.rtake 3) := 
         fun x hxu ↦ claim2_1 u z huz x <| List.IsSuffix.trans hxu <| List.rtake_suffix 3 u
-      have hc3 : ¬HasOverlap (u.rtake 3 * μ (v.take 2)) := by
+      have hc2 : ¬HasOverlap (u.rtake 3 * μ (v.take 2)) := by
         refine factor_no_overlap_of_no_overlap ?_ hw
         exists u.rdrop 3, μ (v.drop 2) * z
         simp only [← mul_assoc]
@@ -216,10 +216,10 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
         mem_allFreeMonoidsOfLength 2 (v.take 2) <| List.length_take_of_le hv0
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hv1
       rcases hu2 with (hu2' | hu2' | hu2' | hu2' | hu2' | hu2' | hu2' | hu2')
-      all_goals try apply hc2 ⟨0, Nat.two_pos⟩;    rw [hu2']; decide
-      all_goals try apply hc2 ⟨1, Nat.one_lt_two⟩; rw [hu2']; decide
+      all_goals try apply hc1 ⟨0, Nat.two_pos⟩;    rw [hu2']; decide
+      all_goals try apply hc1 ⟨1, Nat.one_lt_two⟩; rw [hu2']; decide
       all_goals rcases hv1 with (hv1' | hv1' | hv1' | hv1')
-      all_goals apply hc3; rw [hu2', hv1']; decide
+      all_goals apply hc2; rw [hu2', hv1']; decide
     have claim3_2 : ∀ u z : FreeMonoid (Fin 2), u * μ v * z = w → |z| < 3 := by
       intro u z huz
       by_contra hz1
