@@ -156,8 +156,7 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
       intro fm h1 h2; rhs; intro x 
       rw [is_infix_iff_list_is_infix, iff_and_self.mpr <| (nonerasing_iff.mp μ_nonerasing x).trans ∘ List.IsInfix.length_le]
     simp only [and_assoc]
-    --decide
-    admit
+    decide
   have claim1 : ∀ fm : FreeMonoid (Fin 2), 6 ≤ |fm| → ¬HasOverlap fm → ∃ x : FreeMonoid (Fin 2), μ x <:*: fm ∧ 1 < |x| := by
     intro fm hlfm hfm
     have : fm.take 6 <:*: fm := List.IsPrefix.isInfix <| List.take_prefix _ fm
@@ -174,8 +173,7 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
     revert hlw hw
     rw [forall_comm]
     revert w
-    --decide 
-    admit
+    decide 
   | inr hlw =>
     obtain ⟨v, hvl, hvr⟩ := exists_longest_μ_infix w
     have claim2_1 : ∀ u z : FreeMonoid (Fin 2), u * μ v * z = w → ∀ x : Fin 2, ¬(μ (of x)) <:* u := by
