@@ -1,4 +1,5 @@
 import Mathlib.Data.List.Infix
+import Mathlib.Data.List.DropRight
 
 namespace List
 
@@ -12,8 +13,8 @@ theorem mem_infixes (s t : List α) : s ∈ t.infixes ↔ s <:+: t := by
     rcases mem_cons.mp h with ⟨s, hsl⟩ | hsr
     · exists []
       exact ⟨nil_prefix [], nil_suffix t⟩ 
-    · rcases mem_join.mp hsr with ⟨a, hal, har⟩
-      rcases mem_map.mp hal with ⟨b, hbl, hbr⟩
+    · obtain ⟨a, hal, har⟩ := mem_join.mp hsr
+      obtain ⟨b, hbl, hbr⟩ := mem_map.mp hal
       exists b
       constructor
       · rw [← hbr] at har
@@ -32,5 +33,18 @@ theorem mem_infixes (s t : List α) : s ∈ t.infixes ↔ s <:+: t := by
       · rw [← mem_inits] at hal
         apply mem_of_ne_of_mem <| cons_ne_nil x xs
         cases a <;> assumption
+
+
+theorem length_rtake_eq_length_take (l : List α) (n : ℕ) : (l.rtake n).length = (l.take n).length := by
+  simp [rtake_eq_reverse_take_reverse]
+
+theorem length_rtake_of_le {l : List α} (h : n ≤ l.length) : (l.rtake n).length = n := by
+  simpa [rtake_eq_reverse_take_reverse]
+
+theorem rtake_suffix (n : ℕ) (l : List α) : l.rtake n <:+ l := by
+  simpa only [rtake] using drop_suffix _ _
+
+theorem rdrop_append_rtake (l : List α) : l.rdrop n ++ l.rtake n = l := by
+  simp [rdrop, rtake]
 
 end List

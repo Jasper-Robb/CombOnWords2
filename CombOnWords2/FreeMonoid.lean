@@ -77,13 +77,22 @@ def join : FreeMonoid (FreeMonoid α) →* FreeMonoid α where
 def take (a : ℕ) (fm : FreeMonoid α) : FreeMonoid α := List.take a fm
 
 @[freemonoid_to_list]
+def rtake (a : ℕ) (fm : FreeMonoid α) : FreeMonoid α := List.rtake fm a
+
+@[freemonoid_to_list]
 def drop (a : ℕ) (fm : FreeMonoid α) : FreeMonoid α := List.drop a fm
+
+@[freemonoid_to_list]
+def rdrop (a : ℕ) (fm : FreeMonoid α) : FreeMonoid α := List.rdrop fm a
+
+@[freemonoid_to_list]
+def reverse (fm : FreeMonoid α) : FreeMonoid α := List.reverse fm
 
 
 def NonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop :=
     ∀ (fm : FreeMonoid α), 0 < |fm| → 0 < |f fm|
 
-theorem nonerasing_iff (f : FreeMonoid α →* FreeMonoid β)
+theorem nonerasing_iff {f : FreeMonoid α →* FreeMonoid β}
     : NonErasing f ↔ (∀ fm : FreeMonoid α, |fm| ≤ |f fm|) := by
   constructor
   · intro h fm
@@ -148,23 +157,23 @@ theorem is_infix_iff_list_is_infix (fm₁ fm₂ : FreeMonoid α)
 
 theorem is_prefix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <*: fm₂) (f : FreeMonoid α →* FreeMonoid β)
     : (f fm₁) <*: (f fm₂) := by
-  rcases h with ⟨t, _⟩
+  obtain ⟨t, _⟩ := h
   exists f t
   rw [← map_mul]
   congr
 
 theorem is_suffix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <:* fm₂) (f : FreeMonoid α →* FreeMonoid β)
     : (f fm₁) <:* (f fm₂) := by
-  rcases h with ⟨s, _⟩
+  obtain ⟨s, _⟩ := h
   exists f s
   rw [← map_mul]
   congr
 
 theorem is_infix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <:*: fm₂) (f : FreeMonoid α →* FreeMonoid β)
     : (f fm₁) <:*: (f fm₂) := by
-  rcases h with ⟨s, t, _⟩
+  obtain ⟨s, t, _⟩ := h
   exists f s, f t
-  repeat rw [← map_mul]
+  simp only [← map_mul]
   congr
 
 
@@ -227,22 +236,21 @@ theorem overlap_iff (u : FreeMonoid α) : 2 < |u| ∧ u = u.take (|u| / 2) ^ 2 *
         rwa [hBr, List.append_assoc, List.take_append_of_le_length]
       rwa [sq, huB₁, huB₂]
 
-theorem has_overlap_iff' (fm : FreeMonoid α) 
+theorem has_overlap_iff (fm : FreeMonoid α) 
     : (∃ u ∈ fm.infixes, Overlap u) ↔ HasOverlap fm :=
-  ⟨fun ⟨u, hul, hur⟩ ↦ Exists.intro u ⟨hur, (List.mem_infixes u fm).mp hul⟩,
-   fun ⟨u, hul, hur⟩ ↦ Exists.intro u ⟨(List.mem_infixes u fm).mpr hur, hul⟩⟩
+  ⟨fun ⟨u, hul, hur⟩ ↦ ⟨u, ⟨hur, (List.mem_infixes u fm).mp hul⟩⟩,
+   fun ⟨u, hul, hur⟩ ↦ ⟨u, ⟨(List.mem_infixes u fm).mpr hur, hul⟩⟩⟩
 
-theorem factor_no_overlap_of_no_overlap (fm₁ fm₂ : FreeMonoid α) (hw : ¬HasOverlap fm₂) (hvw : fm₁ <:*: fm₂)
+theorem factor_no_overlap_of_no_overlap {fm₁ fm₂ : FreeMonoid α} (hvw : fm₁ <:*: fm₂) (hw : ¬HasOverlap fm₂)
     : ¬HasOverlap fm₁ :=
-  fun ⟨u, hul, hur⟩ => hw <| Exists.intro u <| ⟨hul, List.IsInfix.trans hur hvw⟩
+  fun ⟨u, hul, hur⟩ => hw ⟨u, ⟨hul, List.IsInfix.trans hur hvw⟩⟩
 
 
 instance [DecidableEq α] (fm : FreeMonoid α) : Decidable (Overlap fm) := 
   decidable_of_decidable_of_iff <| overlap_iff fm
 
 instance [DecidableEq α] (u : FreeMonoid α) : Decidable (HasOverlap u) :=
-  decidable_of_decidable_of_iff <| has_overlap_iff' u
-
+  decidable_of_decidable_of_iff <| has_overlap_iff u
 
 
 theorem prod2_length_le (fm : FreeMonoid α) (fm₁ fm₂ : FreeMonoid α) (h : fm = fm₁ * fm₂) 
@@ -253,6 +261,15 @@ theorem prod2_length_le (fm : FreeMonoid α) (fm₁ fm₂ : FreeMonoid α) (h : 
   · exact Nat.le.intro h.symm
   · rw [add_comm] at h
     exact Nat.le.intro h.symm
+
+theorem prod2_length_le₁ (fm : FreeMonoid α) (fm₁ fm₂ : FreeMonoid α) (h : fm = fm₁ * fm₂) 
+    : |fm₁| ≤ |fm| :=
+  (prod2_length_le fm fm₁ fm₂ h).left
+
+theorem prod2_length_le₂ (fm : FreeMonoid α) (fm₁ fm₂ : FreeMonoid α) (h : fm = fm₁ * fm₂) 
+    : |fm₂| ≤ |fm| :=
+  (prod2_length_le fm fm₁ fm₂ h).right
+
 
 theorem prod3_length_le (fm : FreeMonoid α) (fm₁ fm₂ fm₃ : FreeMonoid α) (h : fm = fm₁ * fm₂ * fm₃) 
     : |fm₁| ≤ |fm| ∧ |fm₂| ≤ |fm| ∧ |fm₃| ≤ |fm| := by
@@ -266,4 +283,16 @@ theorem prod3_length_le (fm : FreeMonoid α) (fm₁ fm₂ fm₃ : FreeMonoid α)
     exact Nat.le.intro h.symm
   · rw [add_comm] at h
     exact Nat.le.intro h.symm
+
+theorem prod3_length_le₁ (fm : FreeMonoid α) (fm₁ fm₂ fm₃ : FreeMonoid α) (h : fm = fm₁ * fm₂ * fm₃) 
+    : |fm₁| ≤ |fm| :=
+  (prod3_length_le fm fm₁ fm₂ fm₃ h).left
+
+theorem prod3_length_le₂ (fm : FreeMonoid α) (fm₁ fm₂ fm₃ : FreeMonoid α) (h : fm = fm₁ * fm₂ * fm₃) 
+    : |fm₂| ≤ |fm| :=
+  (prod3_length_le fm fm₁ fm₂ fm₃ h).right.left
+
+theorem prod3_length_le₃ (fm : FreeMonoid α) (fm₁ fm₂ fm₃ : FreeMonoid α) (h : fm = fm₁ * fm₂ * fm₃) 
+    : |fm₃| ≤ |fm| :=
+  (prod3_length_le fm fm₁ fm₂ fm₃ h).right.right
 
