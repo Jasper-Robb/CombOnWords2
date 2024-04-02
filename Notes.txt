@@ -1,3 +1,0 @@
-Given a Word a w, and a list lf of n non-erasing morphisms, and a list lp of n decidable predicates Word a -> Prop,
-then it is decidable that there exists a list of Words lw, such that w = lf[0] lw[0] * lf[1] lw[1] * ... * lf[n] lw[n],
-and lp[0] lw[0] and lp[1] lw[1] and ... and lp[n] lw[n] holds.
