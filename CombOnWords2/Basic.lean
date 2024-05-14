@@ -58,6 +58,36 @@ theorem mem_allFreeMonoidsMaxLength_iff (n : ℕ) (w : FreeMonoid α) : w ∈ al
   ⟨length_mem_allFreeMonoidsMaxLength n w, mem_allFreeMonoidsMaxLength n w⟩
 
 
+theorem nodup_allFreeMonoidsOfLength (n : ℕ) : (allFreeMonoidsOfLength α n).Nodup :=
+  Multiset.Nodup.map Vector.eq Fintype.elems.nodup
+
+theorem nodup_allFreeMonoidsMaxLength (n : ℕ) : (allFreeMonoidsMaxLength α n).Nodup := by
+  induction n with
+  | zero => exact Multiset.nodup_zero
+  | succ n ih =>
+    rw [allFreeMonoidsMaxLength, Multiset.nodup_add]
+    constructor <;> try constructor
+    · exact ih
+    · exact nodup_allFreeMonoidsOfLength n
+    · exact fun fm hfm₁ hfm₂ ↦
+        LT.lt.false <| Eq.trans_lt (length_mem_allFreeMonoidsOfLength n fm hfm₂).symm <|
+          length_mem_allFreeMonoidsMaxLength n fm hfm₁
+
+
+def allFreeMonoidsOfLength' (α : Type*) [Fintype α] (n : ℕ) : Finset (FreeMonoid α) :=
+  ⟨allFreeMonoidsOfLength α n, nodup_allFreeMonoidsOfLength n⟩
+
+def allFreeMonoidsMaxLength' (α : Type*) [Fintype α] (n : ℕ) : Finset (FreeMonoid α) :=
+  ⟨allFreeMonoidsMaxLength α n, nodup_allFreeMonoidsMaxLength n⟩
+
+
+theorem mem_allFreeMonoidsOfLength'_iff (n : ℕ) (w : FreeMonoid α) : w ∈ allFreeMonoidsOfLength' α n ↔ |w| = n :=
+  mem_allFreeMonoidsOfLength_iff n w
+
+theorem mem_allFreeMonoidsMaxLength'_iff (n : ℕ) (w : FreeMonoid α) : w ∈ allFreeMonoidsMaxLength' α n ↔ |w| < n :=
+  mem_allFreeMonoidsMaxLength_iff n w
+
+
 instance {p : β → Prop} [DecidablePred p] {m : Multiset β} : Decidable (∃ x ∈ m, p x) :=
   Multiset.decidableExistsMultiset
 
@@ -90,14 +120,21 @@ instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| ≤ n → p w
     forall_congr' fun w ↦ imp_congr_left <| (mem_allFreeMonoidsMaxLength_iff (n+1) w).trans Nat.lt_succ
 
 
+theorem nil_in_allFreeMonoidsMaxLength (n : ℕ) (hn : 0 < n) : [] ∈ allFreeMonoidsMaxLength α n := by
+  cases n with
+  | zero => contradiction
+  | succ n =>
+    apply mem_allFreeMonoidsMaxLength
+    simp [freemonoid_to_list]
+
+
 theorem chapter1_question2 (u : FreeMonoid α) (hu : Overlap u)
     : ∃ (v w z : FreeMonoid α), u = w * v ∧ u = z * w ∧ |w| > |v| := by
   obtain ⟨B, hBl, hBr⟩ := hu
   exists (B.drop 1 * B.take 1), (B * B.take 1), B
-  apply And.intro
+  constructor <;> try constructor
   · conv => rw [← mul_assoc]; rhs; lhs; rw [mul_assoc]
     simpa only [freemonoid_to_list, List.take_append_drop]
-  apply And.intro
   · rwa [← mul_assoc]
   · simpa [freemonoid_to_list] using Nat.sub_lt hBl Nat.one_pos
 
@@ -119,10 +156,14 @@ theorem chapter1_question3 (u : FreeMonoid α) (hu : Overlap u)
 
 
 def μ : Monoid.End (FreeMonoid (Fin 2)) := 
-  join ∘* map fun x => if x = 0 then [0, 1] else [1, 0]
+  bind fun x => if x = 0 then [0, 1] else [1, 0]
+
+@[simp]
+theorem μ_nil : μ [] = [] := 
+  rfl
 
 theorem μ_nonerasing : NonErasing μ :=
-  join_map_nonerasing fun x => by fin_cases x <;> exact Nat.two_pos
+  bind_nonerasing fun x => by fin_cases x <;> exact Nat.two_pos
 
 theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v) : HasOverlap (μ v) := by
   obtain ⟨u, ⟨B, hBl, hBr⟩, hur⟩ := hv
@@ -143,9 +184,47 @@ theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v) : HasOve
       all_goals fin_cases x <;> decide
 
 
+def lengthLe (fm₁ fm₂ : FreeMonoid α) : Prop := 
+  |fm₁| ≤ |fm₂| 
+
+instance : @DecidableRel (FreeMonoid α) lengthLe :=
+  fun (fm₁ fm₂ : FreeMonoid α) ↦ Nat.decLe |fm₁| |fm₂|
+
+instance : IsTotal (FreeMonoid α) lengthLe where
+  total := fun (fm₁ fm₂ : FreeMonoid α) ↦ Nat.le_or_le |fm₁| |fm₂|
+
+instance : IsTrans (FreeMonoid α) lengthLe where
+  trans := fun _ _ _ h₁ h₂ ↦ Nat.le_trans h₁ h₂
+
 theorem exists_longest_μ_infix (w : FreeMonoid (Fin 2)) 
-    : ∃ v, μ v <:*: w ∧ ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w :=
-  sorry
+    : ∃ v, μ v <:*: w ∧ ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w := by
+  let l := List.insertionSort lengthLe
+    (List.filter (μ · <:*: w)
+    (Multiset.toList (allFreeMonoidsMaxLength (Fin 2) (|w| + 1))))
+  have hl : l ≠ [] := by
+    suffices [] ∈ l by exact List.ne_nil_of_mem this
+    rw [List.elem_sort_iff_elem _ [] lengthLe, List.mem_filter, Multiset.mem_toList]
+    exact ⟨nil_in_allFreeMonoidsMaxLength (|w| + 1) (Nat.succ_pos |w|), by simpa using List.nil_infix w⟩
+  exists l.getLast hl
+  constructor
+  · apply List.getLast_if_all (μ · <:*: w) l hl
+    intro x hx
+    rw [List.elem_sort_iff_elem] at hx
+    have := List.of_mem_filter hx
+    exact of_decide_eq_true this
+  · intro fm hfm hfm2
+    have : |fm| ≤ |w| := 
+      Nat.le_trans (nonerasing_iff.mp μ_nonerasing fm) (List.IsInfix.length_le hfm2)
+    have : fm ∈ l := by
+      rw [List.elem_sort_iff_elem, List.mem_filter, Multiset.mem_toList]
+      rw [← Nat.lt_succ] at this
+      exact ⟨mem_allFreeMonoidsMaxLength (length w + 1) fm this, decide_eq_true hfm2⟩
+    obtain ⟨n, hn⟩ := List.get_of_mem this
+    rw [List.getLast_eq_get, ← hn] at hfm
+    have : |l.get n| ≤ |l.get ⟨l.length - 1, Nat.sub_lt (List.length_pos.2 hl) Nat.one_pos⟩| := by
+      apply @List.Sorted.rel_get_of_le (FreeMonoid (Fin 2)) lengthLe
+      exacts [List.sorted_insertionSort lengthLe _, Nat.le_sub_one_of_lt (Fin.prop n)]
+    exact LT.lt.false (Nat.lt_of_lt_of_le hfm this)
 
 theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
     : ∃ u ∈ ([[], [0], [1], [0, 0], [1, 1]] : List (FreeMonoid (Fin 2))),
@@ -258,7 +337,7 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
 
 
 def complement : Monoid.End (FreeMonoid (Fin 2)) :=
-  map fun x => 1 - x
+  map (1 - ·)
 
 prefix:100 "~" => complement
 

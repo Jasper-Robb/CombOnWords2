@@ -1,7 +1,10 @@
 import Mathlib.Data.List.Infix
 import Mathlib.Data.List.DropRight
+import Mathlib.Data.List.Sort
+
 
 namespace List
+
 
 def infixes (l : List α) : List (List α) :=
   [] :: (l.tails.map (tail ∘ inits)).join
@@ -46,5 +49,21 @@ theorem rtake_suffix (n : ℕ) (l : List α) : l.rtake n <:+ l := by
 
 theorem rdrop_append_rtake (l : List α) : l.rdrop n ++ l.rtake n = l := by
   simp [rdrop, rtake]
+
+
+theorem getLast_if_all (p : α → Prop) (l : List α) (hl : l ≠ []) : (∀ x ∈ l, p x) → p (l.getLast hl) :=
+  (· (List.getLast l hl) (List.getLast_mem hl))
+
+theorem elem_sort_iff_elem (l : List α) (x : α) (r : α → α → Prop) [DecidableRel r] 
+    : x ∈ l.insertionSort r ↔ x ∈ l :=
+  List.Perm.mem_iff (List.perm_insertionSort r l)
+
+theorem ne_nil_iff_exists_elem (l : List α) : l ≠ [] ↔ ∃ x, x ∈ l :=
+  ⟨List.exists_mem_of_ne_nil l, fun ⟨_, hx⟩ => List.ne_nil_of_mem hx⟩
+
+theorem filter_ne_nil_iff_elem (p : α → Prop) [DecidablePred p] (l : List α) 
+    : (∃ x ∈ l, p x) ↔ l.filter p ≠ [] := by
+  simp only [ne_nil_iff_exists_elem, List.mem_filter, decide_eq_true_eq]
+
 
 end List
