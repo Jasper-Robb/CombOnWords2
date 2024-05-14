@@ -74,6 +74,13 @@ def join : FreeMonoid (FreeMonoid α) →* FreeMonoid α where
 
 
 @[freemonoid_to_list]
+def bind (f : α → FreeMonoid β) : FreeMonoid α →* FreeMonoid β where
+  toFun    := fun fm ↦ List.bind fm f
+  map_one' := List.nil_bind f
+  map_mul' := fun fm₁ fm₂ ↦ List.append_bind fm₁ fm₂ f
+
+
+@[freemonoid_to_list]
 def take (a : ℕ) (fm : FreeMonoid α) : FreeMonoid α := List.take a fm
 
 @[freemonoid_to_list]
@@ -92,6 +99,13 @@ def reverse (fm : FreeMonoid α) : FreeMonoid α := List.reverse fm
 def NonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop :=
     ∀ (fm : FreeMonoid α), 0 < |fm| → 0 < |f fm|
 
+structure NonErasingMorphism where
+  toFun : FreeMonoid α →* FreeMonoid β
+  nonerasing : @NonErasing α β toFun
+
+infixr:25 " [→*] " => NonErasingMorphism
+
+
 theorem nonerasing_iff {f : FreeMonoid α →* FreeMonoid β}
     : NonErasing f ↔ (∀ fm : FreeMonoid α, |fm| ≤ |f fm|) := by
   constructor
@@ -104,14 +118,15 @@ theorem nonerasing_iff {f : FreeMonoid α →* FreeMonoid β}
       simpa only [map_mul] using Nat.add_le_add (h [x] Nat.one_pos) ih
   · exact fun h fm hfm => Nat.lt_of_lt_of_le hfm <| h fm
 
+
 theorem map_nonerasing {f : α → β} : NonErasing <| map f := 
   fun _ _ ↦ by simpa [freemonoid_to_list]
 
-theorem join_map_nonerasing {f : α → FreeMonoid β} (hf : ∀ x, 0 < |f x|)
-    : NonErasing <| join ∘* map f := by
+theorem bind_nonerasing {f : α → FreeMonoid β} (hf : ∀ x, 0 < |f x|)
+    : NonErasing <| bind f := by
   rintro (_ | l) _
   · contradiction
-  · simpa [freemonoid_to_list] using Or.inl <| hf l
+  · simpa [freemonoid_to_list] using Or.inl <| hf l 
 
 
 def IsPrefix (fm₁ : FreeMonoid α) (fm₂ : FreeMonoid α) : Prop :=
