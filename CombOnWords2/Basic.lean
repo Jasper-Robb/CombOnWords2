@@ -17,7 +17,7 @@ def allFreeMonoidsMaxLength (α : Type*) [Fintype α] : ℕ → Multiset (FreeMo
 open FreeMonoid
 
 
-variable {α : Type*} [Fintype α] 
+variable {α β : Type*} [Fintype α] [Fintype β] 
 
 
 def toFinFreeMonoid (n : ℕ) (l : List (Fin n)) : FreeMonoid (Fin n) := l
@@ -88,10 +88,10 @@ theorem mem_allFreeMonoidsMaxLength'_iff (n : ℕ) (w : FreeMonoid α) : w ∈ a
   mem_allFreeMonoidsMaxLength_iff n w
 
 
-instance {p : β → Prop} [DecidablePred p] {m : Multiset β} : Decidable (∃ x ∈ m, p x) :=
+instance [DecidablePred p] {m : Multiset β} : Decidable (∃ x ∈ m, p x) :=
   Multiset.decidableExistsMultiset
 
-instance {p : β → Prop} [DecidablePred p] {m : Multiset β} : Decidable (∀ x ∈ m, p x) :=
+instance [DecidablePred p] {m : Multiset β} : Decidable (∀ x ∈ m, p x) :=
   Multiset.decidableForallMultiset
 
 
@@ -118,6 +118,91 @@ instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| < n → p w) 
 instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| ≤ n → p w) :=
   decidable_of_decidable_of_iff <| 
     forall_congr' fun w ↦ imp_congr_left <| (mem_allFreeMonoidsMaxLength_iff (n+1) w).trans Nat.lt_succ
+
+
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∃ w , w <*: fm ∧ p w) :=
+  decidable_of_decidable_of_iff <| exists_congr fun w ↦ and_congr_left fun _ ↦ List.mem_inits w fm
+
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∃ w, w <:* fm ∧ p w) :=
+  decidable_of_decidable_of_iff <| exists_congr fun w ↦ and_congr_left fun _ ↦ List.mem_tails w fm
+
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∃ w, w <:*: fm ∧ p w) :=
+  decidable_of_decidable_of_iff <| exists_congr fun w ↦ and_congr_left fun _ ↦ List.mem_infixes w fm
+
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∀ w, w <*: fm → p w) :=
+  decidable_of_decidable_of_iff <| forall_congr' fun w ↦ imp_congr_left <| List.mem_inits w fm
+
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∀ w, w <:* fm → p w) :=
+  decidable_of_decidable_of_iff <| forall_congr' fun w ↦ imp_congr_left <| List.mem_tails w fm
+
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∀ w, w <:*: fm → p w) :=
+  decidable_of_decidable_of_iff <| forall_congr' fun w ↦ imp_congr_left <| List.mem_infixes w fm
+
+
+instance [IsNonErasing f] [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |f w| < n ∧ p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∃ w : FreeMonoid α, |w| < n ∧ |f w| < n ∧ p w) ↔ (∃ w, |f w| < n ∧ p w) from
+      ⟨fun ⟨w, _, hw₂, hw₃⟩ ↦ Exists.intro w ⟨hw₂, hw₃⟩,
+        fun ⟨w, hw₁, hw₂⟩ ↦ Exists.intro w ⟨nonerasing_length_lt' f w n hw₁, hw₁, hw₂⟩⟩
+
+instance [IsNonErasing f] [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |f w| ≤ n ∧ p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∃ w : FreeMonoid α, |w| ≤ n ∧ |f w| ≤ n ∧ p w) ↔ (∃ w, |f w| ≤ n ∧ p w) from
+      ⟨fun ⟨w, _, hw₂, hw₃⟩ ↦ Exists.intro w ⟨hw₂, hw₃⟩,
+        fun ⟨w, hw₁, hw₂⟩ ↦ Exists.intro w ⟨nonerasing_length_le' f w n hw₁, hw₁, hw₂⟩⟩
+
+instance [IsNonErasing f] [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |f w| < n → p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∀ w : FreeMonoid α, |w| < n → |f w| < n → p w) ↔ (∀ w, |f w| < n → p w) from
+      ⟨fun h₁ w h₂ ↦ h₁ w (nonerasing_length_lt' f w n h₂) h₂, fun h₁ w _ h₃ ↦ h₁ w h₃⟩
+
+instance [IsNonErasing f] [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |f w| ≤ n → p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∀ w : FreeMonoid α, |w| ≤ n → |f w| ≤ n → p w) ↔ (∀ w, |f w| ≤ n → p w) from
+      ⟨fun h₁ w h₂ ↦ h₁ w (nonerasing_length_le' f w n h₂) h₂, fun h₁ w _ h₃ ↦ h₁ w h₃⟩
+
+
+instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
+    : Decidable (∃ w : FreeMonoid α, f w <*: fm ∧ p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∃ w : FreeMonoid α, |w| ≤ |fm| ∧ f w <*: fm ∧ p w) ↔ (∃ w, f w <*: fm ∧ p w) from
+      ⟨fun ⟨w, _, hw₂, hw₃⟩ ↦ Exists.intro w ⟨hw₂, hw₃⟩,
+        fun ⟨w, hw₁, hw₂⟩ ↦ Exists.intro w ⟨Nat.le_trans (nonerasing_length_le f w) (List.IsPrefix.length_le hw₁), hw₁, hw₂⟩⟩
+
+instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
+    : Decidable (∃ w : FreeMonoid α, f w <:* fm ∧ p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∃ w : FreeMonoid α, |w| ≤ |fm| ∧ f w <:* fm ∧ p w) ↔ (∃ w, f w <:* fm ∧ p w) from
+      ⟨fun ⟨w, _, hw₂, hw₃⟩ ↦ Exists.intro w ⟨hw₂, hw₃⟩,
+        fun ⟨w, hw₁, hw₂⟩ ↦ Exists.intro w ⟨Nat.le_trans (nonerasing_length_le f w) (List.IsSuffix.length_le hw₁), hw₁, hw₂⟩⟩
+
+instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
+    : Decidable (∃ w : FreeMonoid α, f w <:*: fm ∧ p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∃ w : FreeMonoid α, |w| ≤ |fm| ∧ f w <:*: fm ∧ p w) ↔ (∃ w, f w <:*: fm ∧ p w) from
+      ⟨fun ⟨w, _, hw₂, hw₃⟩ ↦ Exists.intro w ⟨hw₂, hw₃⟩,
+        fun ⟨w, hw₁, hw₂⟩ ↦ Exists.intro w ⟨Nat.le_trans (nonerasing_length_le f w) (List.IsInfix.length_le hw₁), hw₁, hw₂⟩⟩
+
+instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
+    : Decidable (∀ w : FreeMonoid α, f w <*: fm → p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∀ w : FreeMonoid α, |w| ≤ |fm| → f w <*: fm → p w) ↔ (∀ w, f w <*: fm → p w) from
+      ⟨fun h w hw ↦ h w (Nat.le_trans (nonerasing_length_le f w) (List.IsPrefix.length_le hw)) hw,
+        fun h w _ hw₂ ↦ h w hw₂⟩
+
+instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
+    : Decidable (∀ w : FreeMonoid α, f w <:* fm → p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∀ w : FreeMonoid α, |w| ≤ |fm| → f w <:* fm → p w) ↔ (∀ w, f w <:* fm → p w) from
+      ⟨fun h w hw ↦ h w (Nat.le_trans (nonerasing_length_le f w) (List.IsSuffix.length_le hw)) hw,
+        fun h w _ hw₂ ↦ h w hw₂⟩
+
+instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
+    : Decidable (∀ w : FreeMonoid α, f w <:*: fm → p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∀ w : FreeMonoid α, |w| ≤ |fm| → f w <:*: fm → p w) ↔ (∀ w, f w <:*: fm → p w) from
+      ⟨fun h w hw ↦ h w (Nat.le_trans (nonerasing_length_le f w) (List.IsInfix.length_le hw)) hw,
+        fun h w _ hw₂ ↦ h w hw₂⟩
 
 
 theorem nil_in_allFreeMonoidsMaxLength (n : ℕ) (hn : 0 < n) : [] ∈ allFreeMonoidsMaxLength α n := by
@@ -158,12 +243,15 @@ theorem chapter1_question3 (u : FreeMonoid α) (hu : Overlap u)
 def μ : Monoid.End (FreeMonoid (Fin 2)) := 
   bind fun x => if x = 0 then [0, 1] else [1, 0]
 
-@[simp]
-theorem μ_nil : μ [] = [] := 
-  rfl
-
 theorem μ_nonerasing : NonErasing μ :=
   bind_nonerasing fun x => by fin_cases x <;> exact Nat.two_pos
+
+instance : IsNonErasing μ where
+  nonerasing := μ_nonerasing
+
+def fm : FreeMonoid (Fin 2) := [1, 0, 0]
+
+theorem test : ∃ w : FreeMonoid (Fin 2), |w| ≤ |fm| ∧ μ w <:*: fm ∧ ¬HasOverlap w := by decide
 
 theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v) : HasOverlap (μ v) := by
   obtain ⟨u, ⟨B, hBl, hBr⟩, hur⟩ := hv
@@ -190,11 +278,11 @@ def lengthLe (fm₁ fm₂ : FreeMonoid α) : Prop :=
 instance : @DecidableRel (FreeMonoid α) lengthLe :=
   fun (fm₁ fm₂ : FreeMonoid α) ↦ Nat.decLe |fm₁| |fm₂|
 
-instance : IsTotal (FreeMonoid α) lengthLe where
-  total := fun (fm₁ fm₂ : FreeMonoid α) ↦ Nat.le_or_le |fm₁| |fm₂|
+instance : IsTotal (FreeMonoid α) lengthLe :=
+  ⟨fun (fm₁ fm₂ : FreeMonoid α) ↦ Nat.le_or_le |fm₁| |fm₂|⟩
 
-instance : IsTrans (FreeMonoid α) lengthLe where
-  trans := fun _ _ _ h₁ h₂ ↦ Nat.le_trans h₁ h₂
+instance : IsTrans (FreeMonoid α) lengthLe :=
+  ⟨fun _ _ _ ↦ Nat.le_trans⟩
 
 theorem exists_longest_μ_infix (w : FreeMonoid (Fin 2)) 
     : ∃ v, μ v <:*: w ∧ ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w := by
@@ -218,7 +306,7 @@ theorem exists_longest_μ_infix (w : FreeMonoid (Fin 2))
     have : fm ∈ l := by
       rw [List.elem_sort_iff_elem, List.mem_filter, Multiset.mem_toList]
       rw [← Nat.lt_succ] at this
-      exact ⟨mem_allFreeMonoidsMaxLength (length w + 1) fm this, decide_eq_true hfm2⟩
+      exact ⟨mem_allFreeMonoidsMaxLength (|w| + 1) fm this, decide_eq_true hfm2⟩
     obtain ⟨n, hn⟩ := List.get_of_mem this
     rw [List.getLast_eq_get, ← hn] at hfm
     have : |l.get n| ≤ |l.get ⟨l.length - 1, Nat.sub_lt (List.length_pos.2 hl) Nat.one_pos⟩| := by

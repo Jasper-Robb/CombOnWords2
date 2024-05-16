@@ -97,13 +97,28 @@ def reverse (fm : FreeMonoid α) : FreeMonoid α := List.reverse fm
 
 
 def NonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop :=
-    ∀ (fm : FreeMonoid α), 0 < |fm| → 0 < |f fm|
+  ∀ (fm : FreeMonoid α), 0 < |fm| → 0 < |f fm|
 
-structure NonErasingMorphism where
+class IsNonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop where
+  nonerasing : NonErasing f
+
+
+structure NonErasingHomomorphism (α β : Type*) where
   toFun : FreeMonoid α →* FreeMonoid β
   nonerasing : @NonErasing α β toFun
 
-infixr:25 " [→*] " => NonErasingMorphism
+structure NonErasingEndomorphism (α : Type*) where
+  toFun : Monoid.End (FreeMonoid α)
+  nonerasing : @NonErasing α α toFun
+
+infixr:25 " [→*] " => NonErasingHomomorphism
+
+
+instance : CoeFun (NonErasingHomomorphism α β) (fun _ ↦ FreeMonoid α → FreeMonoid β) where
+  coe m := m.toFun
+
+instance : CoeFun (NonErasingEndomorphism α) (fun _ ↦ FreeMonoid α → FreeMonoid α) where
+  coe m := m.toFun
 
 
 theorem nonerasing_iff {f : FreeMonoid α →* FreeMonoid β}
@@ -117,6 +132,18 @@ theorem nonerasing_iff {f : FreeMonoid α →* FreeMonoid β}
       conv => rhs; change length' <| f <| of x * ofList xs
       simpa only [map_mul] using Nat.add_le_add (h [x] Nat.one_pos) ih
   · exact fun h fm hfm => Nat.lt_of_lt_of_le hfm <| h fm
+
+theorem nonerasing_length_le (f : FreeMonoid α →* FreeMonoid β) [hf : IsNonErasing f] 
+    : ∀ (fm : FreeMonoid α), |fm| ≤ |f fm| :=
+  nonerasing_iff.mp hf.nonerasing
+
+theorem nonerasing_length_le' (f : FreeMonoid α →* FreeMonoid β) [IsNonErasing f]
+    : ∀ (fm : FreeMonoid α) (n : ℕ), |f fm| ≤ n → |fm| ≤ n :=
+  fun fm₁ _ ↦ Nat.le_trans (nonerasing_length_le f fm₁)
+
+theorem nonerasing_length_lt' (f : FreeMonoid α →* FreeMonoid β) [IsNonErasing f]
+    : ∀ (fm : FreeMonoid α) (n : ℕ), |f fm| < n → |fm| < n :=
+  fun fm _ ↦ Nat.lt_of_le_of_lt (nonerasing_length_le f fm)
 
 
 theorem map_nonerasing {f : α → β} : NonErasing <| map f := 
@@ -144,11 +171,11 @@ infixl:50 " <:* " => IsSuffix
 infixl:50 " <:*: " => IsInfix
 
 
-instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <:* fm₂) :=
-  inferInstanceAs <| Decidable (fm₁ <:+ fm₂)
-
 instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <*: fm₂) :=
   inferInstanceAs <| Decidable (fm₁ <+: fm₂)
+
+instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <:* fm₂) :=
+  inferInstanceAs <| Decidable (fm₁ <:+ fm₂)
 
 instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <:*: fm₂) :=
   inferInstanceAs <| Decidable (fm₁ <:+: fm₂)
