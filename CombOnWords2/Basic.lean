@@ -249,10 +249,6 @@ theorem μ_nonerasing : NonErasing μ :=
 instance : IsNonErasing μ where
   nonerasing := μ_nonerasing
 
-def fm : FreeMonoid (Fin 2) := [1, 0, 0]
-
-theorem test : ∃ w : FreeMonoid (Fin 2), |w| ≤ |fm| ∧ μ w <:*: fm ∧ ¬HasOverlap w := by decide
-
 theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v) : HasOverlap (μ v) := by
   obtain ⟨u, ⟨B, hBl, hBr⟩, hur⟩ := hv
   exists μ B * μ B * (μ B).take 1
@@ -270,6 +266,35 @@ theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v) : HasOve
       simp only [freemonoid_to_list, List.take_cons_succ, List.take_zero]
       rw [List.take_append_of_le_length]
       all_goals fin_cases x <;> decide
+
+
+def complement : Monoid.End (FreeMonoid (Fin 2)) :=
+  map (1 - ·)
+
+prefix:100 "~" => complement
+
+@[simp]
+theorem complement_complement (w : FreeMonoid (Fin 2)) : ~(~w) = w := by
+  change (complement ∘* complement) w = (MonoidHom.id (FreeMonoid (Fin 2))) w
+  congr
+  exact hom_eq fun x => by fin_cases x <;> rfl
+
+@[simp]
+theorem length_complement (w : FreeMonoid (Fin 2)) : |~w| = |w| :=
+  List.length_map w _
+
+
+theorem μ_of_reverse (x : Fin 2) : (μ (of x)).reverse = ~μ (of x) := by
+  fin_cases x <;> rfl
+
+theorem μ_reverse (w : FreeMonoid (Fin 2)) : (μ w).reverse = ~μ w.reverse := by
+  induction w with
+  | nil => rfl
+  | cons x xs ih =>
+    change FreeMonoid (Fin 2) at xs
+    change (μ (of x * xs)).reverse = ~μ (of x * xs).reverse
+    simp only [map_mul, reverse_mul, μ_of_reverse, ih]
+    simp [freemonoid_to_list]
 
 
 def lengthLe (fm₁ fm₂ : FreeMonoid α) : Prop := 
@@ -435,21 +460,6 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
       fin_cases this <;> first | decide | contradiction
     · exact ⟨v, hvno, huz.symm⟩
 
-
-def complement : Monoid.End (FreeMonoid (Fin 2)) :=
-  map (1 - ·)
-
-prefix:100 "~" => complement
-
-@[simp]
-theorem complement_complement (w : FreeMonoid (Fin 2)) : ~(~w) = w := by
-  change (complement ∘* complement) w = (MonoidHom.id (FreeMonoid (Fin 2))) w
-  congr
-  exact hom_eq fun x => by fin_cases x <;> rfl
-
-@[simp]
-theorem length_complement (w : FreeMonoid (Fin 2)) : |~w| = |w| :=
-  List.length_map w _
 
 def X : ℕ → FreeMonoid (Fin 2)
   | 0   => [0]

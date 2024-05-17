@@ -96,6 +96,11 @@ def rdrop (a : ℕ) (fm : FreeMonoid α) : FreeMonoid α := List.rdrop fm a
 def reverse (fm : FreeMonoid α) : FreeMonoid α := List.reverse fm
 
 
+@[simp]
+theorem reverse_mul (fm₁ fm₂ : FreeMonoid α) : (fm₁ * fm₂).reverse = fm₂.reverse * fm₁.reverse :=
+  List.reverse_append fm₁ fm₂
+
+
 def NonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop :=
   ∀ (fm : FreeMonoid α), 0 < |fm| → 0 < |f fm|
 
