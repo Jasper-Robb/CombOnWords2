@@ -211,6 +211,11 @@ theorem is_infix_iff_list_is_infix (fm₁ fm₂ : FreeMonoid α)
   Iff.rfl
 
 
+@[simp]
+theorem reverse_infix (fm₁ fm₂ : FreeMonoid α) : fm₁.reverse <:*: fm₂.reverse ↔ fm₁ <:*: fm₂ :=
+  List.reverse_infix
+
+
 theorem is_prefix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <*: fm₂) (f : FreeMonoid α →* FreeMonoid β)
     : (f fm₁) <*: (f fm₂) := by
   obtain ⟨t, _⟩ := h

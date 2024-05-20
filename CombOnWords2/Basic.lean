@@ -415,16 +415,12 @@ theorem claim3₂ (u v z w : FreeMonoid (Fin 2)) (hw₁ : ¬HasOverlap w) (hw₂
   rw [← length_reverse]
   apply claim3₁ z.reverse (~v.reverse) u.reverse w.reverse
   · rwa [← has_overlap_reverse_iff]
-  · have := congrArg reverse hw₂
-    simp only [reverse_mul, μ_reverse, μ_complement, ← mul_assoc] at this 
-    exact this
+  · simp [← hw₂, reverse_mul, μ_reverse, μ_complement, ← mul_assoc]
   · rw [length_complement, length_reverse]
-    intro v₂ hv₃ hc
+    intro v₂ _ _
     apply hv₁ (~v₂.reverse)
     · rwa [length_complement, length_reverse]
-    · rw [← μ_complement, ← μ_reverse]
-      simp only [freemonoid_to_list]
-      rwa [← List.reverse_infix, List.reverse_reverse]
+    · rwa [← μ_complement, ← μ_reverse, ← reverse_infix, reverse_reverse]
   · simpa
 
 theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
