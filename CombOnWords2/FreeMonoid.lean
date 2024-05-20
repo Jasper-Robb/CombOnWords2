@@ -96,9 +96,18 @@ def rdrop (a : ℕ) (fm : FreeMonoid α) : FreeMonoid α := List.rdrop fm a
 def reverse (fm : FreeMonoid α) : FreeMonoid α := List.reverse fm
 
 
+
 @[simp]
 theorem reverse_mul (fm₁ fm₂ : FreeMonoid α) : (fm₁ * fm₂).reverse = fm₂.reverse * fm₁.reverse :=
   List.reverse_append fm₁ fm₂
+
+@[simp]
+theorem length_reverse (fm : FreeMonoid α) : |fm.reverse| = |fm| := 
+  List.length_reverse fm
+
+@[simp]
+theorem reverse_reverse (fm : FreeMonoid α) : fm.reverse.reverse = fm :=
+  List.reverse_reverse fm
 
 
 def NonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop :=
@@ -252,6 +261,39 @@ def Overlap (fm : FreeMonoid α) : Prop :=
 
 def HasOverlap (fm : FreeMonoid α) : Prop :=
   ∃ u : FreeMonoid α, Overlap u ∧ u <:*: fm
+
+
+theorem overlap_reverse (fm : FreeMonoid α) : Overlap fm → Overlap fm.reverse := by
+  intro ⟨B, hBl, hBr⟩
+  exists B.take 1 * B.reverse.rdrop 1
+  constructor
+  · simpa [freemonoid_to_list] using Or.inl hBl
+  · simp only [← mul_assoc]
+    simp only [freemonoid_to_list]
+    rw [List.take_append_of_le_length, List.take_take, min_self]
+    · conv => rhs; rw [List.append_assoc]; lhs; rw [List.append_assoc]
+      have : List.rdrop (List.reverse B) 1 ++ List.take 1 B = List.reverse B := by
+        rw [← List.reverse_eq_iff, List.reverse_append, List.rdrop_eq_reverse_drop_reverse,
+            List.reverse_reverse, List.reverse_reverse, List.reverse_take_one, List.take_append_drop]
+      simp [this, hBr, freemonoid_to_list, List.reverse_append]
+    · rwa [List.length_take, Nat.min_eq_left]
+
+theorem overlap_reverse_iff (fm : FreeMonoid α) : Overlap fm ↔ Overlap fm.reverse := by
+  constructor
+  · exact overlap_reverse fm
+  · intro h
+    rw [← reverse_reverse fm]
+    exact overlap_reverse (reverse fm) h
+
+theorem has_overlap_reverse (fm : FreeMonoid α) : HasOverlap fm → HasOverlap fm.reverse :=
+  fun ⟨u, hul, hur⟩ ↦ Exists.intro u.reverse ⟨overlap_reverse u hul, List.reverse_infix.mpr hur⟩
+
+theorem has_overlap_reverse_iff (fm : FreeMonoid α) : HasOverlap fm ↔ HasOverlap fm.reverse := by
+  constructor
+  · exact has_overlap_reverse fm
+  · intro h
+    rw [← reverse_reverse fm]
+    exact has_overlap_reverse (reverse fm) h
 
 
 theorem overlap_iff (u : FreeMonoid α) : 2 < |u| ∧ u = u.take (|u| / 2) ^ 2 * u.take 1 ↔ Overlap u := by

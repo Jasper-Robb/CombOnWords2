@@ -296,6 +296,17 @@ theorem μ_reverse (w : FreeMonoid (Fin 2)) : (μ w).reverse = ~μ w.reverse := 
     simp only [map_mul, reverse_mul, μ_of_reverse, ih]
     simp [freemonoid_to_list]
 
+theorem μ_of_complement (x : Fin 2) : ~μ (of x) = μ (~(of x)) := by
+  fin_cases x <;> rfl
+
+theorem μ_complement (w : FreeMonoid (Fin 2)) : ~μ w = μ (~w) := by
+  induction w with
+  | nil => rfl
+  | cons x xs ih =>
+    change FreeMonoid (Fin 2) at xs
+    change ~μ (of x * xs) = μ (~(of x * xs))
+    simp only [map_mul, μ_of_complement, ih]
+
 
 def lengthLe (fm₁ fm₂ : FreeMonoid α) : Prop := 
   |fm₁| ≤ |fm₂| 
@@ -401,33 +412,20 @@ theorem claim3₁ (u v z w : FreeMonoid (Fin 2)) (hw₁ : ¬HasOverlap w) (hw₂
 
 theorem claim3₂ (u v z w : FreeMonoid (Fin 2)) (hw₁ : ¬HasOverlap w) (hw₂ : u * μ v * z = w)
     (hv₁ : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w) (hv₂ : 1 < |v|) : |z| < 3 := by
-  by_contra hz₁
-  rw [Nat.not_lt, ← Nat.lt_succ] at hz₁
-  have hc₁ : ¬HasOverlap (z.take 3) := by 
-    refine factor_no_overlap_of_no_overlap ?_ hw₁
-    exists u * μ v, z.drop 3
-    simp only [freemonoid_to_list, List.append_assoc] at hw₂
-    simpa only [freemonoid_to_list, List.append_assoc, List.take_append_drop]
-  have hc₂ : ∀ x : Fin 2, ¬μ (of x) <*: (z.take 3) := 
-    fun x hxu ↦ claim2₂ u v z w hv₁ hw₂ x <| List.IsPrefix.trans hxu <| List.take_prefix 3 z
-  have hc₃ : ¬HasOverlap (μ (v.rtake 2) * z.take 3) := by
-    refine factor_no_overlap_of_no_overlap ?_ hw₁
-    exists u * μ (v.rdrop 2), z.drop 3
-    conv => lhs; lhs; rw [← mul_assoc]; lhs; rw [mul_assoc, ← map_mul]
-    simp only [freemonoid_to_list, List.rdrop_append_rtake]
-    rwa [List.append_assoc, List.take_append_drop]
-  have hz₂ : z.take 3 ∈ [[0,0,0],[0,0,1],[0,1,0],[0,1,1],[1,0,0],[1,0,1],[1,1,0],[1,1,1]] := 
-    mem_allFreeMonoidsOfLength 3 (z.take 3) <| List.length_take_of_le <| Nat.lt_succ.mp hz₁
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hz₂
-  have hv₃ : v.rtake 2 ∈ [[0,0],[0,1],[1,0],[1,1]] :=
-    mem_allFreeMonoidsOfLength 2 (v.rtake 2) <| List.length_rtake_of_le hv₂
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hv₃
-  rcases hz₂ with (hz₂' | hz₂' | hz₂' | hz₂' | hz₂' | hz₂' | hz₂' | hz₂')
-  all_goals try apply hc₁;                     rw [hz₂']; decide
-  all_goals try apply hc₂ ⟨0, Nat.two_pos⟩;    rw [hz₂']; decide
-  all_goals try apply hc₂ ⟨1, Nat.one_lt_two⟩; rw [hz₂']; decide
-  all_goals rcases hv₃ with (hv₃' | hv₃' | hv₃' | hv₃')
-  all_goals apply hc₃; rw [hz₂', hv₃']; decide
+  rw [← length_reverse]
+  apply claim3₁ z.reverse (~v.reverse) u.reverse w.reverse
+  · rwa [← has_overlap_reverse_iff]
+  · have := congrArg reverse hw₂
+    simp only [reverse_mul, μ_reverse, μ_complement, ← mul_assoc] at this 
+    exact this
+  · rw [length_complement, length_reverse]
+    intro v₂ hv₃ hc
+    apply hv₁ (~v₂.reverse)
+    · rwa [length_complement, length_reverse]
+    · rw [← μ_complement, ← μ_reverse]
+      simp only [freemonoid_to_list]
+      rwa [← List.reverse_infix, List.reverse_reverse]
+  · simpa
 
 theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
     : ∃ u ∈ ([[], [0], [1], [0, 0], [1, 1]] : List (FreeMonoid (Fin 2))),
