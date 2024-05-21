@@ -38,9 +38,6 @@ theorem mem_infixes (s t : List α) : s ∈ t.infixes ↔ s <:+: t := by
         cases a <;> assumption
 
 
-theorem length_rtake_eq_length_take (l : List α) (n : ℕ) : (l.rtake n).length = (l.take n).length := by
-  simp [rtake_eq_reverse_take_reverse]
-
 theorem length_rtake_of_le {l : List α} (h : n ≤ l.length) : (l.rtake n).length = n := by
   simpa [rtake_eq_reverse_take_reverse]
 
@@ -49,6 +46,19 @@ theorem rtake_suffix (n : ℕ) (l : List α) : l.rtake n <:+ l := by
 
 theorem rdrop_append_rtake (l : List α) : l.rdrop n ++ l.rtake n = l := by
   simp [rdrop, rtake]
+
+
+@[simp]
+theorem reverse_take_one (l : List α) : (l.take 1).reverse = l.take 1 := by
+  cases (Nat.le_one_iff_eq_zero_or_eq_one.mp <| length_take_le 1 l) with
+  | inl h =>
+    rw [length_eq_zero.mp h]
+    rfl
+  | inr h =>
+    obtain ⟨x, hx⟩ := length_eq_one.mp h
+    rw [hx]
+    rfl
+
 
 
 theorem getLast_if_all (p : α → Prop) (l : List α) (hl : l ≠ []) : (∀ x ∈ l, p x) → p (l.getLast hl) :=

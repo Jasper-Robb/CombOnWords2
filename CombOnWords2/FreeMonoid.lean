@@ -96,14 +96,43 @@ def rdrop (a : ℕ) (fm : FreeMonoid α) : FreeMonoid α := List.rdrop fm a
 def reverse (fm : FreeMonoid α) : FreeMonoid α := List.reverse fm
 
 
-def NonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop :=
-    ∀ (fm : FreeMonoid α), 0 < |fm| → 0 < |f fm|
 
-structure NonErasingMorphism where
+@[simp]
+theorem reverse_mul (fm₁ fm₂ : FreeMonoid α) : (fm₁ * fm₂).reverse = fm₂.reverse * fm₁.reverse :=
+  List.reverse_append fm₁ fm₂
+
+@[simp]
+theorem length_reverse (fm : FreeMonoid α) : |fm.reverse| = |fm| := 
+  List.length_reverse fm
+
+@[simp]
+theorem reverse_reverse (fm : FreeMonoid α) : fm.reverse.reverse = fm :=
+  List.reverse_reverse fm
+
+
+def NonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop :=
+  ∀ (fm : FreeMonoid α), 0 < |fm| → 0 < |f fm|
+
+class IsNonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop where
+  nonerasing : NonErasing f
+
+
+structure NonErasingHomomorphism (α β : Type*) where
   toFun : FreeMonoid α →* FreeMonoid β
   nonerasing : @NonErasing α β toFun
 
-infixr:25 " [→*] " => NonErasingMorphism
+structure NonErasingEndomorphism (α : Type*) where
+  toFun : Monoid.End (FreeMonoid α)
+  nonerasing : @NonErasing α α toFun
+
+infixr:25 " [→*] " => NonErasingHomomorphism
+
+
+instance : CoeFun (NonErasingHomomorphism α β) (fun _ ↦ FreeMonoid α → FreeMonoid β) where
+  coe m := m.toFun
+
+instance : CoeFun (NonErasingEndomorphism α) (fun _ ↦ FreeMonoid α → FreeMonoid α) where
+  coe m := m.toFun
 
 
 theorem nonerasing_iff {f : FreeMonoid α →* FreeMonoid β}
@@ -117,6 +146,18 @@ theorem nonerasing_iff {f : FreeMonoid α →* FreeMonoid β}
       conv => rhs; change length' <| f <| of x * ofList xs
       simpa only [map_mul] using Nat.add_le_add (h [x] Nat.one_pos) ih
   · exact fun h fm hfm => Nat.lt_of_lt_of_le hfm <| h fm
+
+theorem nonerasing_length_le (f : FreeMonoid α →* FreeMonoid β) [hf : IsNonErasing f] 
+    : ∀ (fm : FreeMonoid α), |fm| ≤ |f fm| :=
+  nonerasing_iff.mp hf.nonerasing
+
+theorem nonerasing_length_le' (f : FreeMonoid α →* FreeMonoid β) [IsNonErasing f]
+    : ∀ (fm : FreeMonoid α) (n : ℕ), |f fm| ≤ n → |fm| ≤ n :=
+  fun fm₁ _ ↦ Nat.le_trans (nonerasing_length_le f fm₁)
+
+theorem nonerasing_length_lt' (f : FreeMonoid α →* FreeMonoid β) [IsNonErasing f]
+    : ∀ (fm : FreeMonoid α) (n : ℕ), |f fm| < n → |fm| < n :=
+  fun fm _ ↦ Nat.lt_of_le_of_lt (nonerasing_length_le f fm)
 
 
 theorem map_nonerasing {f : α → β} : NonErasing <| map f := 
@@ -144,11 +185,11 @@ infixl:50 " <:* " => IsSuffix
 infixl:50 " <:*: " => IsInfix
 
 
-instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <:* fm₂) :=
-  inferInstanceAs <| Decidable (fm₁ <:+ fm₂)
-
 instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <*: fm₂) :=
   inferInstanceAs <| Decidable (fm₁ <+: fm₂)
+
+instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <:* fm₂) :=
+  inferInstanceAs <| Decidable (fm₁ <:+ fm₂)
 
 instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <:*: fm₂) :=
   inferInstanceAs <| Decidable (fm₁ <:+: fm₂)
@@ -168,6 +209,11 @@ theorem is_suffix_iff_list_is_suffix (fm₁ fm₂ : FreeMonoid α)
 theorem is_infix_iff_list_is_infix (fm₁ fm₂ : FreeMonoid α) 
     : fm₁ <:*: fm₂ ↔ fm₁ <:+: fm₂ := 
   Iff.rfl
+
+
+@[simp]
+theorem reverse_infix (fm₁ fm₂ : FreeMonoid α) : fm₁.reverse <:*: fm₂.reverse ↔ fm₁ <:*: fm₂ :=
+  List.reverse_infix
 
 
 theorem is_prefix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <*: fm₂) (f : FreeMonoid α →* FreeMonoid β)
@@ -222,6 +268,39 @@ def HasOverlap (fm : FreeMonoid α) : Prop :=
   ∃ u : FreeMonoid α, Overlap u ∧ u <:*: fm
 
 
+theorem overlap_reverse (fm : FreeMonoid α) : Overlap fm → Overlap fm.reverse := by
+  intro ⟨B, hBl, hBr⟩
+  exists B.take 1 * B.reverse.rdrop 1
+  constructor
+  · simpa [freemonoid_to_list] using Or.inl hBl
+  · simp only [← mul_assoc]
+    simp only [freemonoid_to_list]
+    rw [List.take_append_of_le_length, List.take_take, min_self]
+    · conv => rhs; rw [List.append_assoc]; lhs; rw [List.append_assoc]
+      have : List.rdrop (List.reverse B) 1 ++ List.take 1 B = List.reverse B := by
+        rw [← List.reverse_eq_iff, List.reverse_append, List.rdrop_eq_reverse_drop_reverse,
+            List.reverse_reverse, List.reverse_reverse, List.reverse_take_one, List.take_append_drop]
+      simp [this, hBr, freemonoid_to_list, List.reverse_append]
+    · rwa [List.length_take, Nat.min_eq_left]
+
+theorem overlap_reverse_iff (fm : FreeMonoid α) : Overlap fm ↔ Overlap fm.reverse := by
+  constructor
+  · exact overlap_reverse fm
+  · intro h
+    rw [← reverse_reverse fm]
+    exact overlap_reverse (reverse fm) h
+
+theorem has_overlap_reverse (fm : FreeMonoid α) : HasOverlap fm → HasOverlap fm.reverse :=
+  fun ⟨u, hul, hur⟩ ↦ Exists.intro u.reverse ⟨overlap_reverse u hul, List.reverse_infix.mpr hur⟩
+
+theorem has_overlap_reverse_iff (fm : FreeMonoid α) : HasOverlap fm ↔ HasOverlap fm.reverse := by
+  constructor
+  · exact has_overlap_reverse fm
+  · intro h
+    rw [← reverse_reverse fm]
+    exact has_overlap_reverse (reverse fm) h
+
+
 theorem overlap_iff (u : FreeMonoid α) : 2 < |u| ∧ u = u.take (|u| / 2) ^ 2 * u.take 1 ↔ Overlap u := by
   constructor
   · intro ⟨hlu, hu⟩
@@ -266,48 +345,4 @@ instance [DecidableEq α] (fm : FreeMonoid α) : Decidable (Overlap fm) :=
 
 instance [DecidableEq α] (u : FreeMonoid α) : Decidable (HasOverlap u) :=
   decidable_of_decidable_of_iff <| has_overlap_iff u
-
-
-theorem prod2_length_le (fm : FreeMonoid α) (fm₁ fm₂ : FreeMonoid α) (h : fm = fm₁ * fm₂) 
-    : |fm₁| ≤ |fm| ∧ |fm₂| ≤ |fm| := by
-  apply congr_arg length at h
-  simp only [freemonoid_to_list, List.length_append] at h
-  constructor
-  · exact Nat.le.intro h.symm
-  · rw [add_comm] at h
-    exact Nat.le.intro h.symm
-
-theorem prod2_length_le₁ (fm : FreeMonoid α) (fm₁ fm₂ : FreeMonoid α) (h : fm = fm₁ * fm₂) 
-    : |fm₁| ≤ |fm| :=
-  (prod2_length_le fm fm₁ fm₂ h).left
-
-theorem prod2_length_le₂ (fm : FreeMonoid α) (fm₁ fm₂ : FreeMonoid α) (h : fm = fm₁ * fm₂) 
-    : |fm₂| ≤ |fm| :=
-  (prod2_length_le fm fm₁ fm₂ h).right
-
-
-theorem prod3_length_le (fm : FreeMonoid α) (fm₁ fm₂ fm₃ : FreeMonoid α) (h : fm = fm₁ * fm₂ * fm₃) 
-    : |fm₁| ≤ |fm| ∧ |fm₂| ≤ |fm| ∧ |fm₃| ≤ |fm| := by
-  apply congr_arg length at h
-  simp only [freemonoid_to_list, List.length_append] at h
-  constructor
-  · rw [add_assoc] at h
-    exact Nat.le.intro h.symm
-  constructor
-  · rw [add_comm, ← add_assoc, add_comm] at h
-    exact Nat.le.intro h.symm
-  · rw [add_comm] at h
-    exact Nat.le.intro h.symm
-
-theorem prod3_length_le₁ (fm : FreeMonoid α) (fm₁ fm₂ fm₃ : FreeMonoid α) (h : fm = fm₁ * fm₂ * fm₃) 
-    : |fm₁| ≤ |fm| :=
-  (prod3_length_le fm fm₁ fm₂ fm₃ h).left
-
-theorem prod3_length_le₂ (fm : FreeMonoid α) (fm₁ fm₂ fm₃ : FreeMonoid α) (h : fm = fm₁ * fm₂ * fm₃) 
-    : |fm₂| ≤ |fm| :=
-  (prod3_length_le fm fm₁ fm₂ fm₃ h).right.left
-
-theorem prod3_length_le₃ (fm : FreeMonoid α) (fm₁ fm₂ fm₃ : FreeMonoid α) (h : fm = fm₁ * fm₂ * fm₃) 
-    : |fm₃| ≤ |fm| :=
-  (prod3_length_le fm fm₁ fm₂ fm₃ h).right.right
 

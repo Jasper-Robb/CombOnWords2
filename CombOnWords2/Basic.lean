@@ -17,7 +17,7 @@ def allFreeMonoidsMaxLength (α : Type*) [Fintype α] : ℕ → Multiset (FreeMo
 open FreeMonoid
 
 
-variable {α : Type*} [Fintype α] 
+variable {α β : Type*} [Fintype α] [Fintype β] 
 
 
 def toFinFreeMonoid (n : ℕ) (l : List (Fin n)) : FreeMonoid (Fin n) := l
@@ -88,10 +88,10 @@ theorem mem_allFreeMonoidsMaxLength'_iff (n : ℕ) (w : FreeMonoid α) : w ∈ a
   mem_allFreeMonoidsMaxLength_iff n w
 
 
-instance {p : β → Prop} [DecidablePred p] {m : Multiset β} : Decidable (∃ x ∈ m, p x) :=
+instance [DecidablePred p] {m : Multiset β} : Decidable (∃ x ∈ m, p x) :=
   Multiset.decidableExistsMultiset
 
-instance {p : β → Prop} [DecidablePred p] {m : Multiset β} : Decidable (∀ x ∈ m, p x) :=
+instance [DecidablePred p] {m : Multiset β} : Decidable (∀ x ∈ m, p x) :=
   Multiset.decidableForallMultiset
 
 
@@ -118,6 +118,91 @@ instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| < n → p w) 
 instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| ≤ n → p w) :=
   decidable_of_decidable_of_iff <| 
     forall_congr' fun w ↦ imp_congr_left <| (mem_allFreeMonoidsMaxLength_iff (n+1) w).trans Nat.lt_succ
+
+
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∃ w , w <*: fm ∧ p w) :=
+  decidable_of_decidable_of_iff <| exists_congr fun w ↦ and_congr_left fun _ ↦ List.mem_inits w fm
+
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∃ w, w <:* fm ∧ p w) :=
+  decidable_of_decidable_of_iff <| exists_congr fun w ↦ and_congr_left fun _ ↦ List.mem_tails w fm
+
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∃ w, w <:*: fm ∧ p w) :=
+  decidable_of_decidable_of_iff <| exists_congr fun w ↦ and_congr_left fun _ ↦ List.mem_infixes w fm
+
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∀ w, w <*: fm → p w) :=
+  decidable_of_decidable_of_iff <| forall_congr' fun w ↦ imp_congr_left <| List.mem_inits w fm
+
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∀ w, w <:* fm → p w) :=
+  decidable_of_decidable_of_iff <| forall_congr' fun w ↦ imp_congr_left <| List.mem_tails w fm
+
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∀ w, w <:*: fm → p w) :=
+  decidable_of_decidable_of_iff <| forall_congr' fun w ↦ imp_congr_left <| List.mem_infixes w fm
+
+
+instance [IsNonErasing f] [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |f w| < n ∧ p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∃ w : FreeMonoid α, |w| < n ∧ |f w| < n ∧ p w) ↔ (∃ w, |f w| < n ∧ p w) from
+      ⟨fun ⟨w, _, hw₂, hw₃⟩ ↦ Exists.intro w ⟨hw₂, hw₃⟩,
+        fun ⟨w, hw₁, hw₂⟩ ↦ ⟨w, ⟨nonerasing_length_lt' f w n hw₁, hw₁, hw₂⟩⟩⟩
+
+instance [IsNonErasing f] [DecidablePred p] : Decidable (∃ w : FreeMonoid α, |f w| ≤ n ∧ p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∃ w : FreeMonoid α, |w| ≤ n ∧ |f w| ≤ n ∧ p w) ↔ (∃ w, |f w| ≤ n ∧ p w) from
+      ⟨fun ⟨w, _, hw₂, hw₃⟩ ↦ Exists.intro w ⟨hw₂, hw₃⟩,
+        fun ⟨w, hw₁, hw₂⟩ ↦ ⟨w, ⟨nonerasing_length_le' f w n hw₁, hw₁, hw₂⟩⟩⟩
+
+instance [IsNonErasing f] [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |f w| < n → p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∀ w : FreeMonoid α, |w| < n → |f w| < n → p w) ↔ (∀ w, |f w| < n → p w) from
+      ⟨fun h₁ w h₂ ↦ h₁ w (nonerasing_length_lt' f w n h₂) h₂, fun h₁ w _ h₃ ↦ h₁ w h₃⟩
+
+instance [IsNonErasing f] [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |f w| ≤ n → p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∀ w : FreeMonoid α, |w| ≤ n → |f w| ≤ n → p w) ↔ (∀ w, |f w| ≤ n → p w) from
+      ⟨fun h₁ w h₂ ↦ h₁ w (nonerasing_length_le' f w n h₂) h₂, fun h₁ w _ h₃ ↦ h₁ w h₃⟩
+
+
+instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
+    : Decidable (∃ w : FreeMonoid α, f w <*: fm ∧ p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∃ w : FreeMonoid α, |w| ≤ |fm| ∧ f w <*: fm ∧ p w) ↔ (∃ w, f w <*: fm ∧ p w) from
+      ⟨fun ⟨w, _, hw₂, hw₃⟩ ↦ Exists.intro w ⟨hw₂, hw₃⟩,
+        fun ⟨w, hw₁, hw₂⟩ ↦ ⟨w, ⟨Nat.le_trans (nonerasing_length_le f w) (List.IsPrefix.length_le hw₁), hw₁, hw₂⟩⟩⟩
+
+instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
+    : Decidable (∃ w : FreeMonoid α, f w <:* fm ∧ p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∃ w : FreeMonoid α, |w| ≤ |fm| ∧ f w <:* fm ∧ p w) ↔ (∃ w, f w <:* fm ∧ p w) from
+      ⟨fun ⟨w, _, hw₂, hw₃⟩ ↦ Exists.intro w ⟨hw₂, hw₃⟩,
+        fun ⟨w, hw₁, hw₂⟩ ↦ ⟨w, ⟨Nat.le_trans (nonerasing_length_le f w) (List.IsSuffix.length_le hw₁), hw₁, hw₂⟩⟩⟩
+
+instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
+    : Decidable (∃ w : FreeMonoid α, f w <:*: fm ∧ p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∃ w : FreeMonoid α, |w| ≤ |fm| ∧ f w <:*: fm ∧ p w) ↔ (∃ w, f w <:*: fm ∧ p w) from
+      ⟨fun ⟨w, _, hw₂, hw₃⟩ ↦ Exists.intro w ⟨hw₂, hw₃⟩,
+        fun ⟨w, hw₁, hw₂⟩ ↦ ⟨w, ⟨Nat.le_trans (nonerasing_length_le f w) (List.IsInfix.length_le hw₁), hw₁, hw₂⟩⟩⟩
+
+instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
+    : Decidable (∀ w : FreeMonoid α, f w <*: fm → p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∀ w : FreeMonoid α, |w| ≤ |fm| → f w <*: fm → p w) ↔ (∀ w, f w <*: fm → p w) from
+      ⟨fun h w hw ↦ h w (Nat.le_trans (nonerasing_length_le f w) (List.IsPrefix.length_le hw)) hw,
+        fun h w _ hw₂ ↦ h w hw₂⟩
+
+instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
+    : Decidable (∀ w : FreeMonoid α, f w <:* fm → p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∀ w : FreeMonoid α, |w| ≤ |fm| → f w <:* fm → p w) ↔ (∀ w, f w <:* fm → p w) from
+      ⟨fun h w hw ↦ h w (Nat.le_trans (nonerasing_length_le f w) (List.IsSuffix.length_le hw)) hw,
+        fun h w _ hw₂ ↦ h w hw₂⟩
+
+instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
+    : Decidable (∀ w : FreeMonoid α, f w <:*: fm → p w) :=
+  decidable_of_decidable_of_iff <|
+    show (∀ w : FreeMonoid α, |w| ≤ |fm| → f w <:*: fm → p w) ↔ (∀ w, f w <:*: fm → p w) from
+      ⟨fun h w hw ↦ h w (Nat.le_trans (nonerasing_length_le f w) (List.IsInfix.length_le hw)) hw,
+        fun h w _ hw₂ ↦ h w hw₂⟩
 
 
 theorem nil_in_allFreeMonoidsMaxLength (n : ℕ) (hn : 0 < n) : [] ∈ allFreeMonoidsMaxLength α n := by
@@ -158,12 +243,11 @@ theorem chapter1_question3 (u : FreeMonoid α) (hu : Overlap u)
 def μ : Monoid.End (FreeMonoid (Fin 2)) := 
   bind fun x => if x = 0 then [0, 1] else [1, 0]
 
-@[simp]
-theorem μ_nil : μ [] = [] := 
-  rfl
-
 theorem μ_nonerasing : NonErasing μ :=
   bind_nonerasing fun x => by fin_cases x <;> exact Nat.two_pos
+
+instance : IsNonErasing μ where
+  nonerasing := μ_nonerasing
 
 theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v) : HasOverlap (μ v) := by
   obtain ⟨u, ⟨B, hBl, hBr⟩, hur⟩ := hv
@@ -184,17 +268,57 @@ theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v) : HasOve
       all_goals fin_cases x <;> decide
 
 
+def complement : Monoid.End (FreeMonoid (Fin 2)) :=
+  map (1 - ·)
+
+prefix:100 "~" => complement
+
+@[simp]
+theorem complement_complement (w : FreeMonoid (Fin 2)) : ~(~w) = w := by
+  change (complement ∘* complement) w = (MonoidHom.id (FreeMonoid (Fin 2))) w
+  congr
+  exact hom_eq fun x => by fin_cases x <;> rfl
+
+@[simp]
+theorem length_complement (w : FreeMonoid (Fin 2)) : |~w| = |w| :=
+  List.length_map w _
+
+
+theorem μ_of_reverse (x : Fin 2) : (μ (of x)).reverse = ~μ (of x) := by
+  fin_cases x <;> rfl
+
+theorem μ_reverse (w : FreeMonoid (Fin 2)) : (μ w).reverse = ~μ w.reverse := by
+  induction w with
+  | nil => rfl
+  | cons x xs ih =>
+    change FreeMonoid (Fin 2) at xs
+    change (μ (of x * xs)).reverse = ~μ (of x * xs).reverse
+    simp only [map_mul, reverse_mul, μ_of_reverse, ih]
+    simp [freemonoid_to_list]
+
+theorem μ_of_complement (x : Fin 2) : ~μ (of x) = μ (~(of x)) := by
+  fin_cases x <;> rfl
+
+theorem μ_complement (w : FreeMonoid (Fin 2)) : ~μ w = μ (~w) := by
+  induction w with
+  | nil => rfl
+  | cons x xs ih =>
+    change FreeMonoid (Fin 2) at xs
+    change ~μ (of x * xs) = μ (~(of x * xs))
+    simp only [map_mul, μ_of_complement, ih]
+
+
 def lengthLe (fm₁ fm₂ : FreeMonoid α) : Prop := 
   |fm₁| ≤ |fm₂| 
 
 instance : @DecidableRel (FreeMonoid α) lengthLe :=
   fun (fm₁ fm₂ : FreeMonoid α) ↦ Nat.decLe |fm₁| |fm₂|
 
-instance : IsTotal (FreeMonoid α) lengthLe where
-  total := fun (fm₁ fm₂ : FreeMonoid α) ↦ Nat.le_or_le |fm₁| |fm₂|
+instance : IsTotal (FreeMonoid α) lengthLe :=
+  ⟨fun (fm₁ fm₂ : FreeMonoid α) ↦ Nat.le_or_le |fm₁| |fm₂|⟩
 
-instance : IsTrans (FreeMonoid α) lengthLe where
-  trans := fun _ _ _ h₁ h₂ ↦ Nat.le_trans h₁ h₂
+instance : IsTrans (FreeMonoid α) lengthLe :=
+  ⟨fun _ _ _ ↦ Nat.le_trans⟩
 
 theorem exists_longest_μ_infix (w : FreeMonoid (Fin 2)) 
     : ∃ v, μ v <:*: w ∧ ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w := by
@@ -218,7 +342,7 @@ theorem exists_longest_μ_infix (w : FreeMonoid (Fin 2))
     have : fm ∈ l := by
       rw [List.elem_sort_iff_elem, List.mem_filter, Multiset.mem_toList]
       rw [← Nat.lt_succ] at this
-      exact ⟨mem_allFreeMonoidsMaxLength (length w + 1) fm this, decide_eq_true hfm2⟩
+      exact ⟨mem_allFreeMonoidsMaxLength (|w| + 1) fm this, decide_eq_true hfm2⟩
     obtain ⟨n, hn⟩ := List.get_of_mem this
     rw [List.getLast_eq_get, ← hn] at hfm
     have : |l.get n| ≤ |l.get ⟨l.length - 1, Nat.sub_lt (List.length_pos.2 hl) Nat.one_pos⟩| := by
@@ -226,130 +350,113 @@ theorem exists_longest_μ_infix (w : FreeMonoid (Fin 2))
       exacts [List.sorted_insertionSort lengthLe _, Nat.le_sub_one_of_lt (Fin.prop n)]
     exact LT.lt.false (Nat.lt_of_lt_of_le hfm this)
 
+namespace Question5
+
+theorem claim1 (w : FreeMonoid (Fin 2)) (hlw : 6 ≤ |w|) (hw : ¬HasOverlap w)
+    : ∃ v : FreeMonoid (Fin 2), μ v <:*: w ∧ 1 < |v| := by
+  have h₁ : ∀ w : FreeMonoid (Fin 2), |w| = 6 → ¬HasOverlap w → ∃ x : FreeMonoid (Fin 2), μ x <:*: w ∧ 1 < |x| := by
+    decide
+  have h₂ : w.take 6 <:*: w := List.IsPrefix.isInfix <| List.take_prefix _ w
+  obtain ⟨x, hx, hlx⟩ := h₁ (w.take 6) (List.length_take_of_le hlw) <| factor_no_overlap_of_no_overlap h₂ hw
+  exact ⟨x, ⟨List.IsInfix.trans hx h₂, hlx⟩⟩
+
+theorem claim2₁ (u v z w : FreeMonoid (Fin 2)) (hv : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w)
+    (h : u * μ v * z = w) : ∀ x, ¬μ (of x) <:* u := by
+  intro x ⟨s, hs⟩
+  suffices w = s * μ (of x * v) * z by
+    exact hv (of x * v) (Nat.lt.base |v|) ⟨s, z, this.symm⟩
+  exact calc
+    w = u * μ v * z            := by exact h.symm
+    _ = s * μ (of x) * μ v * z := by rw [← hs] 
+    _ = s * μ (of x * v) * z   := by conv => lhs; lhs; rw [mul_assoc, ← map_mul]
+
+theorem claim2₂ (u v z w : FreeMonoid (Fin 2)) (hv : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w)
+    (h : u * μ v * z = w) : ∀ x, ¬μ (of x) <*: z := by
+  intro x ⟨t, ht⟩
+  suffices w = u * μ (v * of x) * t by
+    exact hv (v * of x) (by simp [freemonoid_to_list]) ⟨u, t, this.symm⟩
+  exact calc
+    w = u * μ v * z            := by exact h.symm
+    _ = u * μ v * μ (of x) * t := by rw [← ht, ← mul_assoc] 
+    _ = u * μ (v * of x) * t   := by conv => lhs; lhs; rw [mul_assoc, ← map_mul]
+
+theorem claim3₁ (u v z w : FreeMonoid (Fin 2)) (hw₁ : ¬HasOverlap w) (hw₂ : u * μ v * z = w)
+    (hv₁ : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w) (hv₂ : 1 < |v|) : |u| < 3 := by
+  by_contra hu₁
+  rw [Nat.not_lt, ← Nat.lt_succ] at hu₁
+  have hc₁ : ¬HasOverlap (u.rtake 3) := by 
+    refine factor_no_overlap_of_no_overlap ?_ hw₁
+    exists u.rdrop 3, μ v * z
+    simp only [freemonoid_to_list, List.append_assoc] at hw₂
+    simpa only [freemonoid_to_list, List.rdrop_append_rtake]
+  have hc₂ : ∀ x : Fin 2, ¬μ (of x) <:* (u.rtake 3) := 
+    fun x hxu ↦ claim2₁ u v z w hv₁ hw₂ x <| List.IsSuffix.trans hxu <| List.rtake_suffix 3 u
+  have hc₃ : ¬HasOverlap (u.rtake 3 * μ (v.take 2)) := by
+    refine factor_no_overlap_of_no_overlap ?_ hw₁
+    exists u.rdrop 3, μ (v.drop 2) * z
+    simp only [← mul_assoc]
+    conv => lhs; lhs; rw [mul_assoc, ← map_mul]
+    simpa only [freemonoid_to_list, List.rdrop_append_rtake, List.take_append_drop]
+  have hu₂ : u.rtake 3 ∈ [[0,0,0],[0,0,1],[0,1,0],[0,1,1],[1,0,0],[1,0,1],[1,1,0],[1,1,1]] := 
+    mem_allFreeMonoidsOfLength 3 (u.rtake 3) <| List.length_rtake_of_le <| Nat.lt_succ.mp hu₁
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hu₂
+  have hv₃ : v.take 2 ∈ [[0,0],[0,1],[1,0],[1,1]] :=
+    mem_allFreeMonoidsOfLength 2 (v.take 2) <| List.length_take_of_le hv₂
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hv₃
+  rcases hu₂ with (hu₂' | hu₂' | hu₂' | hu₂' | hu₂' | hu₂' | hu₂' | hu₂')
+  all_goals try apply hc₁;                     rw [hu₂']; decide
+  all_goals try apply hc₂ ⟨0, Nat.two_pos⟩;    rw [hu₂']; decide
+  all_goals try apply hc₂ ⟨1, Nat.one_lt_two⟩; rw [hu₂']; decide
+  all_goals rcases hv₃ with (hv₃' | hv₃' | hv₃' | hv₃')
+  all_goals apply hc₃; rw [hu₂', hv₃']; decide
+
+theorem claim3₂ (u v z w : FreeMonoid (Fin 2)) (hw₁ : ¬HasOverlap w) (hw₂ : u * μ v * z = w)
+    (hv₁ : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w) (hv₂ : 1 < |v|) : |z| < 3 := by
+  rw [← length_reverse]
+  apply claim3₁ z.reverse (~v.reverse) u.reverse w.reverse
+  · rwa [← has_overlap_reverse_iff]
+  · simp [← hw₂, reverse_mul, μ_reverse, μ_complement, ← mul_assoc]
+  · rw [length_complement, length_reverse]
+    intro v₂ _ _
+    apply hv₁ (~v₂.reverse)
+    · rwa [length_complement, length_reverse]
+    · rwa [← μ_complement, ← μ_reverse, ← reverse_infix, reverse_reverse]
+  · simpa
+
 theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
     : ∃ u ∈ ([[], [0], [1], [0, 0], [1, 1]] : List (FreeMonoid (Fin 2))),
       ∃ z ∈ ([[], [0], [1], [0, 0], [1, 1]] : List (FreeMonoid (Fin 2))),
-      ∃ v : FreeMonoid (Fin 2), ¬HasOverlap v ∧ w = u * μ v * z := by
-  have claim0 : ∀ fm : FreeMonoid (Fin 2), |fm| = 6 → ¬HasOverlap fm → ∃ x : FreeMonoid (Fin 2), μ x <:*: fm ∧ 1 < |x| := by
-    conv => 
-      intro fm h1 h2; rhs; intro x 
-      rw [is_infix_iff_list_is_infix, iff_and_self.mpr <| (nonerasing_iff.mp μ_nonerasing x).trans ∘ List.IsInfix.length_le]
-    simp only [and_assoc]
-    decide
-  have claim1 : ∀ fm : FreeMonoid (Fin 2), 6 ≤ |fm| → ¬HasOverlap fm → ∃ x : FreeMonoid (Fin 2), μ x <:*: fm ∧ 1 < |x| := by
-    intro fm hlfm hfm
-    have : fm.take 6 <:*: fm := List.IsPrefix.isInfix <| List.take_prefix _ fm
-    obtain ⟨x, hx, hlx⟩ := claim0 (fm.take 6) (List.length_take_of_le hlfm) <| factor_no_overlap_of_no_overlap this hfm
-    exact ⟨x, ⟨List.IsInfix.trans hx this, hlx⟩⟩
+      ∃ v : FreeMonoid (Fin 2), w = u * μ v * z ∧ ¬HasOverlap v := by
   cases Nat.lt_or_ge |w| 6 with
   | inl hlw =>
-    conv =>
-      rhs; intro u; rhs; rhs; intro z; rhs; rhs; intro v
-      rw [iff_and_self.mpr <| (nonerasing_iff.mp μ_nonerasing v).trans ∘ prod3_length_le₂ w u (μ v) z]
-    conv =>
-      rhs; intro u; rhs; rhs; intro z; rhs; rhs; intro v;
-      rw [and_comm, and_assoc]
-    revert hlw hw
-    rw [forall_comm]
     revert w
-    decide 
+    conv => 
+      intro w; rw [forall_comm]; intro h1 h2; rhs; intro u; rhs; rhs; intro z; rhs; rhs; intro v; lhs; 
+      rw [show w = u * μ v * z ↔ μ v <:*: w ∧ w = u * μ v * z from ⟨fun h ↦ ⟨⟨u, z, h.symm⟩, h⟩, And.right⟩]
+    simp only [and_assoc]
+    decide
   | inr hlw =>
     obtain ⟨v, hvl, hvr⟩ := exists_longest_μ_infix w
-    have claim2_1 : ∀ u z : FreeMonoid (Fin 2), u * μ v * z = w → ∀ x : Fin 2, ¬(μ (of x)) <:* u := by
-      intro u z h x ⟨s, hs⟩
-      suffices w = s * μ (of x * v) * z by
-        exact hvr (of x * v) (Nat.lt.base |v|) ⟨s, ⟨z, this.symm⟩⟩
-      exact calc
-        w = u * μ v * z            := by exact h.symm
-        _ = s * μ (of x) * μ v * z := by rw [← hs]; 
-        _ = s * μ (of x * v) * z   := by conv => lhs; lhs; rw [mul_assoc, ← map_mul]
-    have claim2_2 : ∀ u z : FreeMonoid (Fin 2), u * μ v * z = w → ∀ x : Fin 2, ¬(μ (of x)) <*: z := by
-      intro u z h x ⟨t, ht⟩
-      suffices w = u * μ (v * of x) * t by
-        exact hvr (v * of x) (by simp [freemonoid_to_list]) ⟨u, ⟨t, this.symm⟩⟩
-      exact calc
-        w = u * μ v * z            := by exact h.symm
-        _ = u * μ v * μ (of x) * t := by rw [← ht, ← mul_assoc]
-        _ = u * μ (v * of x) * t   := by conv => lhs; lhs; rw [mul_assoc, ← map_mul]
-    have hv0 : 1 < |v| := by
+    have hlv : 1 < |v| := by
       by_contra hvnl
       rw [not_lt] at hvnl 
       obtain ⟨v', hvl', hvr'⟩ := claim1 w hlw hw
       exact hvr v' (Nat.lt_of_le_of_lt hvnl hvr') hvl'
-    have claim3_1 : ∀ u z : FreeMonoid (Fin 2), u * μ v * z = w → |u| < 3 := by
-      intro u z huz
-      by_contra hu1
-      rw [Nat.not_lt, ← Nat.lt_succ] at hu1
-      have hc1 : ∀ x : Fin 2, ¬μ (of x) <:* (u.rtake 3) := 
-        fun x hxu ↦ claim2_1 u z huz x <| List.IsSuffix.trans hxu <| List.rtake_suffix 3 u
-      have hc2 : ¬HasOverlap (u.rtake 3 * μ (v.take 2)) := by
-        refine factor_no_overlap_of_no_overlap ?_ hw
-        exists u.rdrop 3, μ (v.drop 2) * z
-        simp only [← mul_assoc]
-        conv => lhs; lhs; rw [mul_assoc, ← map_mul]
-        simpa only [freemonoid_to_list, List.rdrop_append_rtake, List.take_append_drop]
-      have hu2 : u.rtake 3 ∈ [[0,0,0],[0,0,1],[0,1,0],[0,1,1],[1,0,0],[1,0,1],[1,1,0],[1,1,1]] := 
-        mem_allFreeMonoidsOfLength 3 (u.rtake 3) <| List.length_rtake_of_le <| Nat.lt_succ.mp hu1
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hu2
-      have hv1 : v.take 2 ∈ [[0,0],[0,1],[1,0],[1,1]] :=
-        mem_allFreeMonoidsOfLength 2 (v.take 2) <| List.length_take_of_le hv0
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hv1
-      rcases hu2 with (hu2' | hu2' | hu2' | hu2' | hu2' | hu2' | hu2' | hu2')
-      all_goals try apply hc1 ⟨0, Nat.two_pos⟩;    rw [hu2']; decide
-      all_goals try apply hc1 ⟨1, Nat.one_lt_two⟩; rw [hu2']; decide
-      all_goals rcases hv1 with (hv1' | hv1' | hv1' | hv1')
-      all_goals apply hc2; rw [hu2', hv1']; decide
-    have claim3_2 : ∀ u z : FreeMonoid (Fin 2), u * μ v * z = w → |z| < 3 := by
-      intro u z huz
-      by_contra hz1
-      rw [Nat.not_lt, ← Nat.lt_succ] at hz1
-      have hc1 : ∀ x : Fin 2, ¬μ (of x) <*: (z.take 3) := 
-        fun x hxu ↦ claim2_2 u z huz x <| List.IsPrefix.trans hxu <| List.take_prefix 3 z
-      have hc2 : ¬HasOverlap (μ (v.rtake 2) * z.take 3) := by
-        refine factor_no_overlap_of_no_overlap ?_ hw
-        exists u * μ (v.rdrop 2), z.drop 3
-        conv => lhs; lhs; rw [← mul_assoc]; lhs; rw [mul_assoc, ← map_mul]
-        simp only [freemonoid_to_list, List.rdrop_append_rtake]
-        rwa [List.append_assoc, List.take_append_drop]
-      have hz2 : z.take 3 ∈ [[0,0,0],[0,0,1],[0,1,0],[0,1,1],[1,0,0],[1,0,1],[1,1,0],[1,1,1]] := 
-        mem_allFreeMonoidsOfLength 3 (z.take 3) <| List.length_take_of_le <| Nat.lt_succ.mp hz1
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hz2
-      have hv2 : v.rtake 2 ∈ [[0,0],[0,1],[1,0],[1,1]] :=
-        mem_allFreeMonoidsOfLength 2 (v.rtake 2) <| List.length_rtake_of_le hv0
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hv2
-      rcases hz2 with (hz2' | hz2' | hz2' | hz2' | hz2' | hz2' | hz2' | hz2')
-      all_goals try apply hc1 ⟨0, Nat.two_pos⟩;    rw [hz2']; decide
-      all_goals try apply hc1 ⟨1, Nat.one_lt_two⟩; rw [hz2']; decide
-      all_goals rcases hv2 with (hv2' | hv2' | hv2' | hv2')
-      all_goals apply hc2; rw [hz2', hv2']; decide
     have hvno: ¬HasOverlap v := factor_no_overlap_of_no_overlap hvl hw ∘ (chapter1_question4 v)
     obtain ⟨u, z, huz⟩ := hvl
     exists u; constructor <;> try exists z; constructor
-    · have : u ≠ [0, 1] := fun hu ↦ claim2_1 u z huz ⟨0, Nat.two_pos⟩ (by rw [hu]; decide)
-      have : u ≠ [1, 0] := fun hu ↦ claim2_1 u z huz ⟨1, Nat.one_lt_two⟩ (by rw [hu]; decide)
-      have := mem_allFreeMonoidsMaxLength 3 u <| claim3_1 u z huz
+    · have : u ≠ [0, 1] := fun hu ↦ claim2₁ u v z w hvr huz ⟨0, Nat.two_pos⟩ (by rw [hu]; decide)
+      have : u ≠ [1, 0] := fun hu ↦ claim2₁ u v z w hvr huz ⟨1, Nat.one_lt_two⟩ (by rw [hu]; decide)
+      have := mem_allFreeMonoidsMaxLength 3 u <| claim3₁ u v z w hw huz hvr hlv
       fin_cases this <;> first | decide | contradiction
-    · have : z ≠ [0, 1] := fun hz ↦ claim2_2 u z huz ⟨0, Nat.two_pos⟩ (by rw [hz]; decide)
-      have : z ≠ [1, 0] := fun hz ↦ claim2_2 u z huz ⟨1, Nat.one_lt_two⟩ (by rw [hz]; decide)
-      have := mem_allFreeMonoidsMaxLength 3 z <| claim3_2 u z huz
+    · have : z ≠ [0, 1] := fun hz ↦ claim2₂ u v z w hvr huz ⟨0, Nat.two_pos⟩ (by rw [hz]; decide)
+      have : z ≠ [1, 0] := fun hz ↦ claim2₂ u v z w hvr huz ⟨1, Nat.one_lt_two⟩ (by rw [hz]; decide)
+      have := mem_allFreeMonoidsMaxLength 3 z <| claim3₂ u v z w hw huz hvr hlv
       fin_cases this <;> first | decide | contradiction
-    · exact ⟨v, hvno, huz.symm⟩
+    · exact ⟨v, huz.symm, hvno⟩
 
+end Question5
 
-def complement : Monoid.End (FreeMonoid (Fin 2)) :=
-  map (1 - ·)
-
-prefix:100 "~" => complement
-
-@[simp]
-theorem complement_complement (w : FreeMonoid (Fin 2)) : ~(~w) = w := by
-  change (complement ∘* complement) w = (MonoidHom.id (FreeMonoid (Fin 2))) w
-  congr
-  exact hom_eq fun x => by fin_cases x <;> rfl
-
-@[simp]
-theorem length_complement (w : FreeMonoid (Fin 2)) : |~w| = |w| :=
-  List.length_map w _
 
 def X : ℕ → FreeMonoid (Fin 2)
   | 0   => [0]
