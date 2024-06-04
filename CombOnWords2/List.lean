@@ -60,7 +60,6 @@ theorem reverse_take_one (l : List α) : (l.take 1).reverse = l.take 1 := by
     rfl
 
 
-
 theorem getLast_if_all (p : α → Prop) (l : List α) (hl : l ≠ []) : (∀ x ∈ l, p x) → p (l.getLast hl) :=
   (· (List.getLast l hl) (List.getLast_mem hl))
 
