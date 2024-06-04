@@ -28,7 +28,7 @@ theorem mem_infixes (s t : List α) : s ∈ t.infixes ↔ s <:+: t := by
     cases s with
     | nil => exact Or.inl rfl
     | cons x xs =>
-      apply Or.inr
+      right
       simp only [mem_join, mem_map, mem_tails, Function.comp_apply, exists_exists_and_eq_and]
       exists a
       constructor
@@ -58,7 +58,6 @@ theorem reverse_take_one (l : List α) : (l.take 1).reverse = l.take 1 := by
     obtain ⟨x, hx⟩ := length_eq_one.mp h
     rw [hx]
     rfl
-
 
 
 theorem getLast_if_all (p : α → Prop) (l : List α) (hl : l ≠ []) : (∀ x ∈ l, p x) → p (l.getLast hl) :=

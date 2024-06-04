@@ -45,12 +45,8 @@ instance [DecidableEq α] (a : α) (fm : FreeMonoid α) : Decidable (a ∈ fm) :
   inferInstanceAs <| Decidable (a ∈ FreeMonoid.toList fm)
 
 
-def length' : FreeMonoid α →* Multiplicative ℕ where
-  toFun    := List.length
-  map_one' := List.length_nil
-  map_mul' := List.length_append
-
-def length (fm : FreeMonoid α) : ℕ := length' fm
+def length (fm : FreeMonoid α) : ℕ := 
+  List.length fm
 
 -- Macro for length fm as |fm|
 macro:max atomic("|" noWs) a:term noWs "|" : term => `(length $a)
@@ -64,6 +60,10 @@ def FreeMonoid.length.unexpander : Lean.PrettyPrinter.Unexpander
 @[freemonoid_to_list]
 theorem length_eq_list_length (fm : FreeMonoid α) : fm.length = List.length fm :=
   rfl
+
+@[simp]
+theorem length_mul (fm₁ fm₂ : FreeMonoid α) : (fm₁ * fm₂).length = fm₁.length + fm₂.length :=
+  List.length_append fm₁ fm₂
 
 
 @[freemonoid_to_list]
@@ -117,34 +117,13 @@ class IsNonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop where
   nonerasing : NonErasing f
 
 
-structure NonErasingHomomorphism (α β : Type*) where
-  toFun : FreeMonoid α →* FreeMonoid β
-  nonerasing : @NonErasing α β toFun
-
-structure NonErasingEndomorphism (α : Type*) where
-  toFun : Monoid.End (FreeMonoid α)
-  nonerasing : @NonErasing α α toFun
-
-infixr:25 " [→*] " => NonErasingHomomorphism
-
-
-instance : CoeFun (NonErasingHomomorphism α β) (fun _ ↦ FreeMonoid α → FreeMonoid β) where
-  coe m := m.toFun
-
-instance : CoeFun (NonErasingEndomorphism α) (fun _ ↦ FreeMonoid α → FreeMonoid α) where
-  coe m := m.toFun
-
-
 theorem nonerasing_iff {f : FreeMonoid α →* FreeMonoid β}
     : NonErasing f ↔ (∀ fm : FreeMonoid α, |fm| ≤ |f fm|) := by
   constructor
   · intro h fm
-    induction fm with
-    | nil => exact tsub_add_cancel_iff_le.mp rfl
-    | cons x xs ih =>
-      conv => lhs; change length' <| of x * ofList xs
-      conv => rhs; change length' <| f <| of x * ofList xs
-      simpa only [map_mul] using Nat.add_le_add (h [x] Nat.one_pos) ih
+    induction' fm using FreeMonoid.recOn
+    case h0 => exact tsub_add_cancel_iff_le.mp rfl
+    case ih x xs ih => simpa using Nat.add_le_add (h [x] Nat.one_pos) ih
   · exact fun h fm hfm => Nat.lt_of_lt_of_le hfm <| h fm
 
 theorem nonerasing_length_le (f : FreeMonoid α →* FreeMonoid β) [hf : IsNonErasing f] 
@@ -168,6 +147,41 @@ theorem bind_nonerasing {f : α → FreeMonoid β} (hf : ∀ x, 0 < |f x|)
   rintro (_ | l) _
   · contradiction
   · simpa [freemonoid_to_list] using Or.inl <| hf l 
+
+
+def Uniform (f : FreeMonoid α →* FreeMonoid β) (c : ℕ) : Prop :=
+  ∀ fm, |f fm| = c * |fm|
+
+theorem map_uniform {f : α → β} : Uniform (map f) 1 := by
+  simp [Uniform, freemonoid_to_list]
+
+theorem bind_uniform {f : α → FreeMonoid β} {c : ℕ} (hf : ∀ x, |f x| = c)
+    : Uniform (bind f) c := by
+  change ∀ x, (List.length ∘ f) x = c at hf
+  simpa [Uniform, freemonoid_to_list, funext hf] using fun _ ↦ mul_comm _ _
+
+theorem length_pow_uniform {f : Monoid.End (FreeMonoid α)} {c : ℕ} (hf : Uniform f c)
+    (n : ℕ) (fm : FreeMonoid α) : |(f^n : Monoid.End _) fm| = c^n * |fm| := by
+  induction n with
+  | zero => simp
+  | succ k ih => 
+    rw [pow_succ, pow_succ, Monoid.coe_mul, Function.comp_apply, hf _, ih, mul_assoc]
+
+theorem length_of_length_uniform {f : FreeMonoid α →* FreeMonoid β} {c : ℕ} (hc : 0 < c) 
+    (hf : Uniform f c) (fm : FreeMonoid α) : |fm| = |f fm| / c := by
+  rw [hf, mul_comm, Nat.mul_div_left _ hc]
+
+theorem length_lt_of_lt_length_uniform {f : FreeMonoid α →* FreeMonoid β} {c : ℕ}
+    (hf : Uniform f c) {n : ℕ} {fm : FreeMonoid α} (h : n < |f fm|) : n / c < |fm| :=
+  Nat.div_lt_of_lt_mul <| by rwa [← hf]
+
+theorem nonerasing_of_uniform {f : FreeMonoid α →* FreeMonoid β} {c : ℕ} (hc : 0 < c)
+    (hf : Uniform f c) : NonErasing f :=
+  fun _ ↦ by rw [hf]; exact Nat.mul_pos hc
+
+
+theorem morphism_to_bind (f : FreeMonoid α →* FreeMonoid β) : f = bind (f ∘ of) :=
+  hom_eq <| by simp [freemonoid_to_list]
 
 
 def IsPrefix (fm₁ : FreeMonoid α) (fm₂ : FreeMonoid α) : Prop :=
