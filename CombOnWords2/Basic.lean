@@ -1,6 +1,7 @@
 import CombOnWords2.Decidable
 import Mathlib.Tactic.FinCases
 import Mathlib.Data.Nat.Parity
+import Mathlib.Data.Nat.Digits
 
 
 open FreeMonoid
@@ -12,14 +13,6 @@ variable {α β : Type*} [Fintype α] [Fintype β]
 def toFinFreeMonoid (n : ℕ) (l : List (Fin n)) : FreeMonoid (Fin n) := l
 
 infix:75 " $↑ " => toFinFreeMonoid
-
-
-theorem nil_in_allFreeMonoidsMaxLength (n : ℕ) (hn : 0 < n) : [] ∈ allFreeMonoidsMaxLength α n := by
-  cases n with
-  | zero => contradiction
-  | succ n =>
-    apply mem_allFreeMonoidsMaxLength
-    simp [freemonoid_to_list]
 
 
 theorem chapter1_question2 (u : FreeMonoid α) (hu : Overlap u)
@@ -38,9 +31,12 @@ theorem chapter1_question3 (u : FreeMonoid α) (hu : Overlap u)
       (∃ (x y : FreeMonoid α), 0 < |x| ∧ 0 < |y| ∧ u = x * y * x * y * x) := by
   obtain ⟨B, hBl, hBr⟩ := hu
   cases eq_or_ne |B| 1 with
-  | inl h => exact Or.inl <| Exists.intro B ⟨hBl, by simpa [hBr] using List.take_length_le <| Nat.le_of_eq h⟩
+  | inl h => 
+    left
+    exists B 
+    exact ⟨hBl, by simpa [hBr] using List.take_length_le <| Nat.le_of_eq h⟩
   | inr h =>
-    apply Or.inr
+    right
     exists (B.take 1), (B.drop 1)
     constructor <;> try constructor
     · simpa [freemonoid_to_list]
@@ -50,10 +46,10 @@ theorem chapter1_question3 (u : FreeMonoid α) (hu : Overlap u)
 
 
 def μ : Monoid.End (FreeMonoid (Fin 2)) := 
-  bind fun x => if x = 0 then [0, 1] else [1, 0]
+  bind fun x ↦ [x, 1 - x]
 
 theorem μ_nonerasing : NonErasing μ :=
-  bind_nonerasing fun x => by fin_cases x <;> exact Nat.two_pos
+  bind_nonerasing fun x ↦ by fin_cases x <;> exact Nat.two_pos
 
 instance : IsNonErasing μ where
   nonerasing := μ_nonerasing
@@ -66,15 +62,13 @@ theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v) : HasOve
   · suffices μ B * μ B * (μ B).take 1 <*: μ u by
       exact List.IsInfix.trans (List.IsPrefix.isInfix this) <| is_infix_congr hur μ
     simp only [hBr, map_mul]
-    apply (List.prefix_append_right_inj (μ B * μ B)).mpr
-    cases B with
-    | nil => contradiction
-    | cons x xs =>
-      conv => lhs; change (μ (ofList (x :: xs))).take 1
-      rw [ofList_cons, map_mul]
-      simp only [freemonoid_to_list, List.take_cons_succ, List.take_zero]
-      rw [List.take_append_of_le_length]
-      all_goals fin_cases x <;> decide
+    cases' B using FreeMonoid.casesOn
+    case h0 => contradiction
+    case ih x xs =>
+      rw [map_mul]
+      simp only [freemonoid_to_list, List.singleton_append, List.take_cons_succ, List.take_zero,
+                 List.prefix_append_right_inj]
+      rw [List.take_append_of_le_length] <;> fin_cases x <;> decide
 
 
 def complement : Monoid.End (FreeMonoid (Fin 2)) :=
@@ -84,24 +78,22 @@ prefix:100 "~" => complement
 
 @[simp]
 theorem complement_complement (w : FreeMonoid (Fin 2)) : ~(~w) = w := by
-  change (complement ∘* complement) w = (MonoidHom.id (FreeMonoid (Fin 2))) w
+  change (complement ∘* complement) w = (MonoidHom.id _) w
   congr
-  exact hom_eq fun x => by fin_cases x <;> rfl
+  exact hom_eq fun x ↦ by fin_cases x <;> rfl
 
 @[simp]
 theorem length_complement (w : FreeMonoid (Fin 2)) : |~w| = |w| :=
-  List.length_map w _
+  List.length_map _ _
 
 
 theorem μ_of_reverse (x : Fin 2) : (μ (of x)).reverse = ~μ (of x) := by
   fin_cases x <;> rfl
 
 theorem μ_reverse (w : FreeMonoid (Fin 2)) : (μ w).reverse = ~μ w.reverse := by
-  induction w with
-  | nil => rfl
-  | cons x xs ih =>
-    change FreeMonoid (Fin 2) at xs
-    change (μ (of x * xs)).reverse = ~μ (of x * xs).reverse
+  induction' w using FreeMonoid.recOn
+  case h0 => rfl
+  case ih x xs ih =>
     simp only [map_mul, reverse_mul, μ_of_reverse, ih]
     simp [freemonoid_to_list]
 
@@ -109,13 +101,17 @@ theorem μ_of_complement (x : Fin 2) : ~μ (of x) = μ (~(of x)) := by
   fin_cases x <;> rfl
 
 theorem μ_complement (w : FreeMonoid (Fin 2)) : ~μ w = μ (~w) := by
-  induction w with
-  | nil => rfl
-  | cons x xs ih =>
-    change FreeMonoid (Fin 2) at xs
-    change ~μ (of x * xs) = μ (~(of x * xs))
-    simp only [map_mul, μ_of_complement, ih]
+  induction' w using FreeMonoid.recOn
+  case h0 => rfl
+  case ih x xs ih => simp only [map_mul, μ_of_complement, ih]
 
+
+theorem nil_in_allFreeMonoidsMaxLength (n : ℕ) (hn : 0 < n) : [] ∈ allFreeMonoidsMaxLength α n := by
+  cases n with
+  | zero => contradiction
+  | succ n =>
+    apply mem_allFreeMonoidsMaxLength
+    simp [freemonoid_to_list]
 
 def lengthLe (fm₁ fm₂ : FreeMonoid α) : Prop := 
   |fm₁| ≤ |fm₂| 
@@ -233,10 +229,6 @@ theorem claim3₂ (u v z w : FreeMonoid (Fin 2)) (hw₁ : ¬HasOverlap w) (hw₂
     · rwa [← μ_complement, ← μ_reverse, ← reverse_infix, reverse_reverse]
   · simpa
 
-end Question5
-
-
-open Question5
 
 theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
     : ∃ u ∈ ([[], [0], [1], [0, 0], [1, 1]] : List (FreeMonoid (Fin 2))),
@@ -257,7 +249,7 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
       rw [not_lt] at hvnl 
       obtain ⟨v', hvl', hvr'⟩ := claim1 w hlw hw
       exact hvr v' (Nat.lt_of_le_of_lt hvnl hvr') hvl'
-    have hvno: ¬HasOverlap v := factor_no_overlap_of_no_overlap hvl hw ∘ (chapter1_question4 v)
+    have hvno : ¬HasOverlap v := factor_no_overlap_of_no_overlap hvl hw ∘ (chapter1_question4 v)
     obtain ⟨u, z, huz⟩ := hvl
     exists u; constructor <;> try exists z; constructor
     · have : u ≠ [0, 1] := fun hu ↦ claim2₁ u v z w hvr huz ⟨0, Nat.two_pos⟩ (by rw [hu]; decide)
@@ -270,32 +262,27 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
       fin_cases this <;> first | decide | contradiction
     · exact ⟨v, huz.symm, hvno⟩
 
+end Question5
+
 
 def X : ℕ → FreeMonoid (Fin 2)
   | 0   => [0]
   | n+1 => X n * ~X n
 
-theorem chapter1_question7 (n : ℕ)
-    : (μ^n : Monoid.End (FreeMonoid (Fin 2))) [0] = X n ∧ 
-      (μ^n : Monoid.End (FreeMonoid (Fin 2))) [1] = ~X n := by
+theorem μ_pow_complement (k : ℕ) (fm : FreeMonoid (Fin 2))
+    : (μ^k : Monoid.End _) (~fm) = ~(μ^k : Monoid.End _) fm := by
+  induction k with
+  | zero => rfl
+  | succ k ih => simp [pow_succ, ih, μ_complement]
+
+theorem chapter1_question7 (n : ℕ) : (μ^n : Monoid.End _) [0] = X n := by
   induction n with
-  | zero => exact ⟨rfl, rfl⟩
-  | succ k ih =>
-    apply And.intro
-    · exact calc 
-      (μ^k.succ) [0] = (μ^k) (μ [0])               := by rw [pow_succ' μ k]; rfl
-                   _ = (μ^k) [0, 1]                := by rfl
-                   _ = (μ^k) (2 $↑ [0] * 2 $↑ [1]) := by rfl
-                   _ = (μ^k) [0] * (μ^k) [1]       := by rw [map_mul]; rfl
-                   _ = X k * ~X k                  := by rw [ih.left, ih.right]
-                   _ = X k.succ                    := by rfl
-    · exact calc 
-      (μ^k.succ) [1] = (μ^k) (μ [1])               := by rw [pow_succ' μ k]; rfl
-                   _ = (μ^k) [1, 0]                := by rfl
-                   _ = (μ^k) (2 $↑ [1] * 2 $↑ [0]) := by rfl
-                   _ = (μ^k) [1] * (μ^k) [0]       := by rw [map_mul]; rfl
-                   _ = ~X k * X k                  := by rw [ih.right, ih.left]
-                   _ = ~X k * ~(~X k)              := by rw [complement_complement] 
-                   _ = ~(X k * ~X k)               := by rw [← map_mul]
-                   _ = ~X k.succ                   := by rfl
+  | zero => exact rfl
+  | succ k ih => exact calc 
+    (μ^k.succ) [0] = (μ^k) (μ [0])               := by rw [pow_succ']; rfl
+                 _ = (μ^k) (2 $↑ [0] * 2 $↑ [1]) := by rfl
+                 _ = (μ^k) [0] * (μ^k) (~[0])    := by rw [map_mul]; rfl
+                 _ = (μ^k) [0] * ~(μ^k) [0]      := by rw [μ_pow_complement]
+                 _ = X k * ~X k                  := by rw [ih]
+                 _ = X k.succ                    := by rfl
 

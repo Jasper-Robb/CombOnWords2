@@ -28,7 +28,7 @@ theorem mem_infixes (s t : List α) : s ∈ t.infixes ↔ s <:+: t := by
     cases s with
     | nil => exact Or.inl rfl
     | cons x xs =>
-      apply Or.inr
+      right
       simp only [mem_join, mem_map, mem_tails, Function.comp_apply, exists_exists_and_eq_and]
       exists a
       constructor
