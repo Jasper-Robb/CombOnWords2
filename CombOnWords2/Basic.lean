@@ -66,8 +66,7 @@ prefix:100 "~" => complement
 @[simp]
 theorem complement_complement (w : FreeMonoid (Fin 2)) : ~(~w) = w := by
   change (complement ∘* complement) w = (MonoidHom.id _) w
-  congr
-  exact hom_eq fun x ↦ by fin_cases x <;> rfl
+  exact DFunLike.congr_fun (hom_eq fun x ↦ by fin_cases x <;> rfl) w
 
 @[simp]
 theorem length_complement (w : FreeMonoid (Fin 2)) : |~w| = |w| :=
@@ -84,13 +83,9 @@ theorem μ_reverse (w : FreeMonoid (Fin 2)) : (μ w).reverse = ~μ w.reverse := 
     simp only [map_mul, reverse_mul, μ_of_reverse, ih]
     simp [freemonoid_to_list]
 
-theorem μ_of_complement (x : Fin 2) : ~μ (of x) = μ (~(of x)) := by
-  fin_cases x <;> rfl
-
 theorem μ_complement (w : FreeMonoid (Fin 2)) : ~μ w = μ (~w) := by
-  induction' w using FreeMonoid.recOn
-  case h0 => rfl
-  case ih x xs ih => simp only [map_mul, μ_of_complement, ih]
+  change (complement ∘* μ) w = (μ ∘* complement) w
+  exact DFunLike.congr_fun (hom_eq fun x ↦ by fin_cases x <;> rfl) w
 
 
 theorem nil_in_allFreeMonoidsMaxLength (n : ℕ) (hn : 0 < n) : [] ∈ allFreeMonoidsMaxLength α n := by
