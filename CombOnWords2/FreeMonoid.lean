@@ -286,8 +286,28 @@ def HasOverlap (fm : FreeMonoid α) : Prop :=
   ∃ u : FreeMonoid α, Overlap u ∧ u <:*: fm
 
 
-theorem overlap_reverse (fm : FreeMonoid α) : Overlap fm → Overlap fm.reverse := by
-  intro ⟨B, hBl, hBr⟩
+theorem overlap_of_nonerasing {f : FreeMonoid α →* FreeMonoid β} [hf : IsNonErasing f]
+    {fm : FreeMonoid α} (hfm : HasOverlap fm) : HasOverlap (f fm) := by
+  obtain ⟨u, ⟨B, hBl, hBr⟩, hur⟩ := hfm
+  exists f B * f B * (f B).take 1
+  constructor
+  · exact ⟨f B, hf.nonerasing B hBl, rfl⟩
+  · suffices f B * f B * (f B).take 1 <*: f u by
+      exact List.IsInfix.trans (List.IsPrefix.isInfix this) <| is_infix_congr hur f
+    simp only [hBr, map_mul]
+    cases' B using FreeMonoid.casesOn
+    case h0 => contradiction
+    case ih x xs =>
+      rw [map_mul]
+      simp only [freemonoid_to_list, List.singleton_append, List.take_cons_succ, List.take_zero,
+                 List.prefix_append_right_inj]
+      rw [List.take_append_of_le_length]
+      · exact List.take_prefix _ _
+      · exact hf.nonerasing [x] (by simp [freemonoid_to_list])
+
+
+theorem overlap_reverse (fm : FreeMonoid α) (hfm : Overlap fm) : Overlap fm.reverse := by
+  obtain ⟨B, hBl, hBr⟩ := hfm
   exists B.take 1 * B.reverse.rdrop 1
   constructor
   · simpa [freemonoid_to_list] using Or.inl hBl
@@ -309,7 +329,7 @@ theorem overlap_reverse_iff (fm : FreeMonoid α) : Overlap fm ↔ Overlap fm.rev
     exact overlap_reverse (reverse fm) h
 
 theorem has_overlap_reverse (fm : FreeMonoid α) : HasOverlap fm → HasOverlap fm.reverse :=
-  fun ⟨u, hul, hur⟩ ↦ Exists.intro u.reverse ⟨overlap_reverse u hul, List.reverse_infix.mpr hur⟩
+  fun ⟨u, hul, hur⟩ ↦ ⟨u.reverse, ⟨overlap_reverse u hul, List.reverse_infix.mpr hur⟩⟩
 
 theorem has_overlap_reverse_iff (fm : FreeMonoid α) : HasOverlap fm ↔ HasOverlap fm.reverse := by
   constructor

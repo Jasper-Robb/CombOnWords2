@@ -54,21 +54,8 @@ theorem μ_nonerasing : NonErasing μ :=
 instance : IsNonErasing μ where
   nonerasing := μ_nonerasing
 
-theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v) : HasOverlap (μ v) := by
-  obtain ⟨u, ⟨B, hBl, hBr⟩, hur⟩ := hv
-  exists μ B * μ B * (μ B).take 1
-  constructor
-  · exact ⟨(μ B), ⟨μ_nonerasing B hBl, rfl⟩⟩
-  · suffices μ B * μ B * (μ B).take 1 <*: μ u by
-      exact List.IsInfix.trans (List.IsPrefix.isInfix this) <| is_infix_congr hur μ
-    simp only [hBr, map_mul]
-    cases' B using FreeMonoid.casesOn
-    case h0 => contradiction
-    case ih x xs =>
-      rw [map_mul]
-      simp only [freemonoid_to_list, List.singleton_append, List.take_cons_succ, List.take_zero,
-                 List.prefix_append_right_inj]
-      rw [List.take_append_of_le_length] <;> fin_cases x <;> decide
+theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v) : HasOverlap (μ v) :=
+  overlap_of_nonerasing hv
 
 
 def complement : Monoid.End (FreeMonoid (Fin 2)) :=
