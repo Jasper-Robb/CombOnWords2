@@ -152,32 +152,36 @@ theorem bind_nonerasing {f : α → FreeMonoid β} (hf : ∀ x, 0 < |f x|)
 def Uniform (f : FreeMonoid α →* FreeMonoid β) (c : ℕ) : Prop :=
   ∀ fm, |f fm| = c * |fm|
 
+class IsUniform (f : FreeMonoid α →* FreeMonoid β) (c : ℕ) : Prop where
+  uniform : Uniform f c
+
+
 theorem map_uniform {f : α → β} : Uniform (map f) 1 := by
   simp [Uniform, freemonoid_to_list]
 
-theorem bind_uniform {f : α → FreeMonoid β} {c : ℕ} (hf : ∀ x, |f x| = c)
-    : Uniform (bind f) c := by
+theorem bind_uniform {f : α → FreeMonoid β} {c : ℕ} (hf : ∀ x, |f x| = c) : Uniform (bind f) c := by
   change ∀ x, (List.length ∘ f) x = c at hf
   simpa [Uniform, freemonoid_to_list, funext hf] using fun _ ↦ mul_comm _ _
+  
 
-theorem length_pow_uniform {f : Monoid.End (FreeMonoid α)} {c : ℕ} (hf : Uniform f c)
+theorem length_pow_uniform (f : Monoid.End (FreeMonoid α)) (c : ℕ) [hf : IsUniform f c]
     (n : ℕ) (fm : FreeMonoid α) : |(f^n : Monoid.End _) fm| = c^n * |fm| := by
   induction n with
   | zero => simp
   | succ k ih => 
-    rw [pow_succ, pow_succ, Monoid.coe_mul, Function.comp_apply, hf _, ih, mul_assoc]
+    rw [pow_succ, pow_succ, Monoid.coe_mul, Function.comp_apply, hf.uniform _, ih, mul_assoc]
 
-theorem length_of_length_uniform {f : FreeMonoid α →* FreeMonoid β} {c : ℕ} (hc : 0 < c) 
-    (hf : Uniform f c) (fm : FreeMonoid α) : |fm| = |f fm| / c := by
-  rw [hf, mul_comm, Nat.mul_div_left _ hc]
+theorem length_of_length_uniform (f : FreeMonoid α →* FreeMonoid β) {c : ℕ}
+    [hf : IsUniform f c] (hc : 0 < c) (fm : FreeMonoid α) : |fm| = |f fm| / c := by
+  rw [hf.uniform, mul_comm, Nat.mul_div_left _ hc]
 
-theorem length_lt_of_lt_length_uniform {f : FreeMonoid α →* FreeMonoid β} {c : ℕ}
-    (hf : Uniform f c) {n : ℕ} {fm : FreeMonoid α} (h : n < |f fm|) : n / c < |fm| :=
-  Nat.div_lt_of_lt_mul <| by rwa [← hf]
+theorem length_lt_of_lt_length_uniform (f : FreeMonoid α →* FreeMonoid β) (c : ℕ)
+    [hf : IsUniform f c] {n : ℕ} {fm : FreeMonoid α} (h : n < |f fm|) : n / c < |fm| :=
+  Nat.div_lt_of_lt_mul <| by rwa [← hf.uniform]
 
-theorem nonerasing_of_uniform {f : FreeMonoid α →* FreeMonoid β} {c : ℕ} (hc : 0 < c)
-    (hf : Uniform f c) : NonErasing f :=
-  fun _ ↦ by rw [hf]; exact Nat.mul_pos hc
+theorem length_lt_of_pow (f : Monoid.End (FreeMonoid α)) (c : ℕ) [IsUniform f c]
+    {n i : ℕ} (hi : i < c^n) : i < |(f^n : Monoid.End _) [x]| := by
+  simpa [length_pow_uniform f c n [x], freemonoid_to_list]
 
 
 theorem morphism_to_bind (f : FreeMonoid α →* FreeMonoid β) : f = bind (f ∘ of) :=
@@ -282,8 +286,28 @@ def HasOverlap (fm : FreeMonoid α) : Prop :=
   ∃ u : FreeMonoid α, Overlap u ∧ u <:*: fm
 
 
-theorem overlap_reverse (fm : FreeMonoid α) : Overlap fm → Overlap fm.reverse := by
-  intro ⟨B, hBl, hBr⟩
+theorem overlap_of_nonerasing {f : FreeMonoid α →* FreeMonoid β} [hf : IsNonErasing f]
+    {fm : FreeMonoid α} (hfm : HasOverlap fm) : HasOverlap (f fm) := by
+  obtain ⟨u, ⟨B, hBl, hBr⟩, hur⟩ := hfm
+  exists f B * f B * (f B).take 1
+  constructor
+  · exact ⟨f B, hf.nonerasing B hBl, rfl⟩
+  · suffices f B * f B * (f B).take 1 <*: f u by
+      exact List.IsInfix.trans (List.IsPrefix.isInfix this) <| is_infix_congr hur f
+    simp only [hBr, map_mul]
+    cases' B using FreeMonoid.casesOn
+    case h0 => contradiction
+    case ih x xs =>
+      rw [map_mul]
+      simp only [freemonoid_to_list, List.singleton_append, List.take_cons_succ, List.take_zero,
+                 List.prefix_append_right_inj]
+      rw [List.take_append_of_le_length]
+      · exact List.take_prefix _ _
+      · exact hf.nonerasing [x] (by simp [freemonoid_to_list])
+
+
+theorem overlap_reverse (fm : FreeMonoid α) (hfm : Overlap fm) : Overlap fm.reverse := by
+  obtain ⟨B, hBl, hBr⟩ := hfm
   exists B.take 1 * B.reverse.rdrop 1
   constructor
   · simpa [freemonoid_to_list] using Or.inl hBl
@@ -305,7 +329,7 @@ theorem overlap_reverse_iff (fm : FreeMonoid α) : Overlap fm ↔ Overlap fm.rev
     exact overlap_reverse (reverse fm) h
 
 theorem has_overlap_reverse (fm : FreeMonoid α) : HasOverlap fm → HasOverlap fm.reverse :=
-  fun ⟨u, hul, hur⟩ ↦ Exists.intro u.reverse ⟨overlap_reverse u hul, List.reverse_infix.mpr hur⟩
+  fun ⟨u, hul, hur⟩ ↦ ⟨u.reverse, ⟨overlap_reverse u hul, List.reverse_infix.mpr hur⟩⟩
 
 theorem has_overlap_reverse_iff (fm : FreeMonoid α) : HasOverlap fm ↔ HasOverlap fm.reverse := by
   constructor
