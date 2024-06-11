@@ -158,7 +158,7 @@ theorem exists_longest_μ_infix (w : FreeMonoid (Fin 2))
 
 namespace Question5
 
-theorem claim1 (w : FreeMonoid (Fin 2)) (hlw : 6 ≤ |w|) (hw : ¬HasOverlap w)
+theorem claim1 {w : FreeMonoid (Fin 2)} (hlw : 6 ≤ |w|) (hw : ¬HasOverlap w)
     : ∃ v : FreeMonoid (Fin 2), μ v <:*: w ∧ 1 < |v| := by
   have h₁ : ∀ w : FreeMonoid (Fin 2), |w| = 6 → ¬HasOverlap w → ∃ x : FreeMonoid (Fin 2), μ x <:*: w ∧ 1 < |x| := by
     decide
@@ -166,7 +166,7 @@ theorem claim1 (w : FreeMonoid (Fin 2)) (hlw : 6 ≤ |w|) (hw : ¬HasOverlap w)
   obtain ⟨x, hx, hlx⟩ := h₁ (w.take 6) (List.length_take_of_le hlw) <| factor_no_overlap_of_no_overlap h₂ hw
   exact ⟨x, ⟨List.IsInfix.trans hx h₂, hlx⟩⟩
 
-theorem claim2₁ (u v z w : FreeMonoid (Fin 2)) (hv : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w)
+theorem claim2₁ {u v z w : FreeMonoid (Fin 2)} (hv : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w)
     (h : u * μ v * z = w) : ∀ x, ¬μ (of x) <:* u := by
   intro x ⟨s, hs⟩
   suffices w = s * μ (of x * v) * z by
@@ -176,7 +176,7 @@ theorem claim2₁ (u v z w : FreeMonoid (Fin 2)) (hv : ∀ v₂ : FreeMonoid (Fi
     _ = s * μ (of x) * μ v * z := by rw [← hs] 
     _ = s * μ (of x * v) * z   := by conv => lhs; lhs; rw [mul_assoc, ← map_mul]
 
-theorem claim2₂ (u v z w : FreeMonoid (Fin 2)) (hv : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w)
+theorem claim2₂ {u v z w : FreeMonoid (Fin 2)} (hv : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w)
     (h : u * μ v * z = w) : ∀ x, ¬μ (of x) <*: z := by
   intro x ⟨t, ht⟩
   suffices w = u * μ (v * of x) * t by
@@ -186,7 +186,7 @@ theorem claim2₂ (u v z w : FreeMonoid (Fin 2)) (hv : ∀ v₂ : FreeMonoid (Fi
     _ = u * μ v * μ (of x) * t := by rw [← ht, ← mul_assoc] 
     _ = u * μ (v * of x) * t   := by conv => lhs; lhs; rw [mul_assoc, ← map_mul]
 
-theorem claim3₁ (u v z w : FreeMonoid (Fin 2)) (hw₁ : ¬HasOverlap w) (hw₂ : u * μ v * z = w)
+theorem claim3₁ {u v z w : FreeMonoid (Fin 2)} (hw₁ : ¬HasOverlap w) (hw₂ : u * μ v * z = w)
     (hv₁ : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w) (hv₂ : 1 < |v|) : |u| < 3 := by
   by_contra hu₁
   rw [Nat.not_lt, ← Nat.lt_succ] at hu₁
@@ -196,7 +196,7 @@ theorem claim3₁ (u v z w : FreeMonoid (Fin 2)) (hw₁ : ¬HasOverlap w) (hw₂
     simp only [freemonoid_to_list, List.append_assoc] at hw₂
     simpa only [freemonoid_to_list, List.rdrop_append_rtake]
   have hc₂ : ∀ x : Fin 2, ¬μ (of x) <:* (u.rtake 3) := 
-    fun x hxu ↦ claim2₁ u v z w hv₁ hw₂ x <| List.IsSuffix.trans hxu <| List.rtake_suffix 3 u
+    fun x hxu ↦ claim2₁ hv₁ hw₂ x <| List.IsSuffix.trans hxu <| List.rtake_suffix 3 u
   have hc₃ : ¬HasOverlap (u.rtake 3 * μ (v.take 2)) := by
     refine factor_no_overlap_of_no_overlap ?_ hw₁
     exists u.rdrop 3, μ (v.drop 2) * z
@@ -216,10 +216,10 @@ theorem claim3₁ (u v z w : FreeMonoid (Fin 2)) (hw₁ : ¬HasOverlap w) (hw₂
   all_goals rcases hv₃ with (hv₃' | hv₃' | hv₃' | hv₃')
   all_goals apply hc₃; rw [hu₂', hv₃']; decide
 
-theorem claim3₂ (u v z w : FreeMonoid (Fin 2)) (hw₁ : ¬HasOverlap w) (hw₂ : u * μ v * z = w)
+theorem claim3₂ {u v z w : FreeMonoid (Fin 2)} (hw₁ : ¬HasOverlap w) (hw₂ : u * μ v * z = w)
     (hv₁ : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w) (hv₂ : 1 < |v|) : |z| < 3 := by
   rw [← length_reverse]
-  apply claim3₁ z.reverse (~v.reverse) u.reverse w.reverse
+  apply @claim3₁ z.reverse (~v.reverse) u.reverse w.reverse
   · rwa [← has_overlap_reverse_iff]
   · simp [← hw₂, reverse_mul, μ_reverse, μ_complement, ← mul_assoc]
   · rw [length_complement, length_reverse]
@@ -247,18 +247,18 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
     have hlv : 1 < |v| := by
       by_contra hvnl
       rw [not_lt] at hvnl 
-      obtain ⟨v', hvl', hvr'⟩ := claim1 w hlw hw
+      obtain ⟨v', hvl', hvr'⟩ := claim1 hlw hw
       exact hvr v' (Nat.lt_of_le_of_lt hvnl hvr') hvl'
     have hvno : ¬HasOverlap v := factor_no_overlap_of_no_overlap hvl hw ∘ (chapter1_question4 v)
     obtain ⟨u, z, huz⟩ := hvl
     exists u; constructor <;> try exists z; constructor
-    · have : u ≠ [0, 1] := fun hu ↦ claim2₁ u v z w hvr huz ⟨0, Nat.two_pos⟩ (by rw [hu]; decide)
-      have : u ≠ [1, 0] := fun hu ↦ claim2₁ u v z w hvr huz ⟨1, Nat.one_lt_two⟩ (by rw [hu]; decide)
-      have := mem_allFreeMonoidsMaxLength 3 u <| claim3₁ u v z w hw huz hvr hlv
+    · have : u ≠ [0, 1] := fun hu ↦ claim2₁ hvr huz ⟨0, Nat.two_pos⟩ (by rw [hu]; decide)
+      have : u ≠ [1, 0] := fun hu ↦ claim2₁ hvr huz ⟨1, Nat.one_lt_two⟩ (by rw [hu]; decide)
+      have := mem_allFreeMonoidsMaxLength 3 u <| claim3₁ hw huz hvr hlv
       fin_cases this <;> first | decide | contradiction
-    · have : z ≠ [0, 1] := fun hz ↦ claim2₂ u v z w hvr huz ⟨0, Nat.two_pos⟩ (by rw [hz]; decide)
-      have : z ≠ [1, 0] := fun hz ↦ claim2₂ u v z w hvr huz ⟨1, Nat.one_lt_two⟩ (by rw [hz]; decide)
-      have := mem_allFreeMonoidsMaxLength 3 z <| claim3₂ u v z w hw huz hvr hlv
+    · have : z ≠ [0, 1] := fun hz ↦ claim2₂ hvr huz ⟨0, Nat.two_pos⟩ (by rw [hz]; decide)
+      have : z ≠ [1, 0] := fun hz ↦ claim2₂ hvr huz ⟨1, Nat.one_lt_two⟩ (by rw [hz]; decide)
+      have := mem_allFreeMonoidsMaxLength 3 z <| claim3₂ hw huz hvr hlv
       fin_cases this <;> first | decide | contradiction
     · exact ⟨v, huz.symm, hvno⟩
 
@@ -277,7 +277,7 @@ theorem μ_pow_complement (k : ℕ) (fm : FreeMonoid (Fin 2))
 
 theorem chapter1_question7 (n : ℕ) : (μ^n : Monoid.End _) [0] = X n := by
   induction n with
-  | zero => exact rfl
+  | zero => rfl
   | succ k ih => exact calc 
     (μ^k.succ) [0] = (μ^k) (μ [0])               := by rw [pow_succ']; rfl
                  _ = (μ^k) (2 $↑ [0] * 2 $↑ [1]) := by rfl
