@@ -75,4 +75,15 @@ theorem filter_ne_nil_iff_elem (p : α → Prop) [DecidablePred p] (l : List α)
   simp only [ne_nil_iff_exists_elem, List.mem_filter, decide_eq_true_eq]
 
 
+theorem get?_eq_of_prefix {l₁ l₂ : List α} (h : l₁ <+: l₂) {n : ℕ} (hn : n < l₁.length)
+    : l₁.get? n = l₂.get? n := by
+  obtain ⟨s, hs⟩ := h
+  rw [← hs, List.get?_append hn]
+
+theorem get_eq_of_prefix {l₁ l₂ : List α} (h : l₁ <+: l₂) {n : ℕ} (hn : n < l₁.length)
+    : l₁.get ⟨n, hn⟩ = l₂.get ⟨n, Nat.lt_of_lt_of_le hn (List.IsPrefix.length_le h)⟩ := by
+  apply Option.some_injective _
+  simpa [← List.get?_eq_get] using get?_eq_of_prefix h hn
+
+
 end List

@@ -33,8 +33,7 @@ theorem chapter1_question3 (u : FreeMonoid α) (hu : Overlap u)
   cases eq_or_ne |B| 1 with
   | inl h => 
     left
-    exists B 
-    exact ⟨hBl, by simpa [hBr] using List.take_length_le <| Nat.le_of_eq h⟩
+    exact ⟨B, hBl, by simpa [hBr] using List.take_length_le <| Nat.le_of_eq h⟩
   | inr h =>
     right
     exists (B.take 1), (B.drop 1)
@@ -51,8 +50,8 @@ def μ : Monoid.End (FreeMonoid (Fin 2)) :=
 theorem μ_nonerasing : NonErasing μ :=
   bind_nonerasing fun x ↦ by fin_cases x <;> exact Nat.two_pos
 
-instance : IsNonErasing μ where
-  nonerasing := μ_nonerasing
+instance : IsNonErasing μ :=
+  ⟨μ_nonerasing⟩
 
 theorem chapter1_question4 (v : FreeMonoid (Fin 2)) (hv : HasOverlap v) : HasOverlap (μ v) :=
   overlap_of_nonerasing hv
@@ -253,9 +252,7 @@ def X : ℕ → FreeMonoid (Fin 2)
 
 theorem μ_pow_complement (k : ℕ) (fm : FreeMonoid (Fin 2))
     : (μ^k : Monoid.End _) (~fm) = ~(μ^k : Monoid.End _) fm := by
-  induction k with
-  | zero => rfl
-  | succ k ih => simp [pow_succ, ih, μ_complement]
+  induction k <;> simp [*, pow_succ, μ_complement]
 
 theorem chapter1_question7 (n : ℕ) : (μ^n : Monoid.End _) [0] = X n := by
   induction n with
