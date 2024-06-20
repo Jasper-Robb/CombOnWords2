@@ -75,17 +75,6 @@ theorem filter_ne_nil_iff_elem (p : α → Prop) [DecidablePred p] (l : List α)
   simp only [ne_nil_iff_exists_elem, List.mem_filter, decide_eq_true_eq]
 
 
-theorem get?_eq_of_prefix {l₁ l₂ : List α} (h : l₁ <+: l₂) {n : ℕ} (hn : n < l₁.length)
-    : l₁.get? n = l₂.get? n := by
-  obtain ⟨s, hs⟩ := h
-  rw [← hs, List.get?_append hn]
-
-theorem get_eq_of_prefix {l₁ l₂ : List α} (h : l₁ <+: l₂) {n : ℕ} (hn : n < l₁.length)
-    : l₁.get ⟨n, hn⟩ = l₂.get ⟨n, Nat.lt_of_lt_of_le hn (List.IsPrefix.length_le h)⟩ := by
-  apply Option.some_injective _
-  simpa [← List.get?_eq_get] using get?_eq_of_prefix h hn
-
-
 def IsProperPrefix (l₁ l₂ : List α) : Prop :=
   ∃ t ≠ [], l₁ ++ t = l₂
 
@@ -101,7 +90,9 @@ infixl:50 " <<:+ " => IsProperSuffix
 infixl:50 " <<:+: " => IsProperInfix
 
 
-theorem is_proper_prefix_iff₁ (l₁ l₂ : List α) 
+namespace IsProperPrefix
+
+theorem iff₁ (l₁ l₂ : List α) 
     : l₁ <<+: l₂ ↔ l₁ <+: l₂ ∧ l₁.length < l₂.length := by
   constructor
   · intro ⟨t, htl, htr⟩
@@ -116,7 +107,7 @@ theorem is_proper_prefix_iff₁ (l₁ l₂ : List α)
       exact length_pos.mp (Nat.pos_of_lt_add_right h)
     · exact ht
 
-theorem is_proper_prefix_iff₂ (l₁ l₂ : List α) 
+theorem iff₂ (l₁ l₂ : List α) 
     : l₁ <<+: l₂ ↔ l₁ <+: l₂ ∧ l₁ ≠ l₂ := by
   constructor
   · intro ⟨t, htl, htr⟩
@@ -128,8 +119,53 @@ theorem is_proper_prefix_iff₂ (l₁ l₂ : List α)
   · exact fun ⟨⟨t, ht⟩, h⟩ ↦ ⟨t, ⟨fun hc ↦ h (by rw [← ht, hc, append_nil]), ht⟩⟩
 
 
+theorem trans {l₁ l₂ l₃ : List α} (h₁ : l₁ <<+: l₂) (h₂ : l₂ <<+: l₃)
+    : (l₁ <<+: l₃) := by
+  obtain ⟨t₁, htl₁, htr₁⟩ := h₁
+  obtain ⟨t₂, _, htr₂⟩ := h₂
+  exists t₁ ++ t₂
+  constructor
+  · exact append_ne_nil_of_left_ne_nil t₁ _ htl₁
+  · rw [← append_assoc, htr₁, htr₂]
+
+
+theorem length_lt {l₁ l₂ : List α} (h : l₁ <<+: l₂) : l₁.length < l₂.length :=
+  ((iff₁ l₁ l₂).mp h).right
+
+
 instance [DecidableEq α] (l₁ l₂ : List α) : Decidable (l₁ <<+: l₂) :=
-  decidable_of_decidable_of_iff <| (is_proper_prefix_iff₁ l₁ l₂).symm
+  decidable_of_decidable_of_iff <| (iff₁ l₁ l₂).symm
+
+end IsProperPrefix
+
+
+theorem ppx_of_px_of_ppx {l₁ l₂ l₃ : List α} (h₁ : l₁ <+: l₂) (h₂ : l₂ <<+: l₃)
+    : l₁ <<+: l₃ := by
+  obtain ⟨t₁, ht⟩ := h₁
+  obtain ⟨t₂, htl, htr⟩ := h₂
+  exists t₁ ++ t₂
+  constructor
+  · exact append_ne_nil_of_ne_nil_right t₁ t₂ htl
+  · rw [← append_assoc, ht, htr]
+
+
+theorem prefix_of_eq {l₁ l₂ : List α} (h : l₁ = l₂) : l₁ <+: l₂ := by
+  rw [h]; exact prefix_rfl
+
+
+theorem get?_eq_of_prefix {l₁ l₂ : List α} (h : l₁ <+: l₂) {n : ℕ} (hn : n < l₁.length)
+    : l₁.get? n = l₂.get? n := by
+  obtain ⟨t, ht⟩ := h
+  rw [← ht, List.get?_append hn]
+
+theorem get_eq_of_prefix {l₁ l₂ : List α} (h : l₁ <+: l₂) {n : ℕ} (hn : n < l₁.length)
+    : l₁.get ⟨n, hn⟩ = l₂.get ⟨n, Nat.lt_of_lt_of_le hn (IsPrefix.length_le h)⟩ := by
+  apply Option.some_injective _
+  simpa [← List.get?_eq_get] using get?_eq_of_prefix h hn
+
+
+theorem prefix_of_proper_prefix {l₁ l₂ : List α} : l₁ <<+: l₂ → l₁ <+: l₂ :=
+  fun ⟨t, _, htr⟩ ↦ ⟨t, htr⟩
 
 
 end List
