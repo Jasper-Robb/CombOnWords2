@@ -198,9 +198,23 @@ def IsInfix (fm₁ : FreeMonoid α) (fm₂ : FreeMonoid α) : Prop :=
   ∃ s t, s * fm₁ * t = fm₂
 
 
+def IsProperPrefix (fm₁ fm₂ : FreeMonoid α) : Prop :=
+  ∃ t ≠ 1, fm₁ * t = fm₂
+
+def IsProperSuffix (fm₁ fm₂ : FreeMonoid α) : Prop :=
+  ∃ s ≠ 1, s * fm₁ = fm₂
+
+def IsProperInfix (fm₁ fm₂ : FreeMonoid α) : Prop :=
+  ∃ s t, s ≠ 1 ∧ t ≠ 1 ∧ s * fm₁ * t = fm₂
+
+
 infixl:50 " <*: " => IsPrefix
 infixl:50 " <:* " => IsSuffix
 infixl:50 " <:*: " => IsInfix
+
+infixl:50 " <<*: " => IsProperPrefix
+infixl:50 " <<:* " => IsProperSuffix
+infixl:50 " <<:*: " => IsProperInfix
 
 
 instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <*: fm₂) :=
@@ -226,6 +240,22 @@ theorem is_suffix_iff_list_is_suffix (fm₁ fm₂ : FreeMonoid α)
 @[freemonoid_to_list]
 theorem is_infix_iff_list_is_infix (fm₁ fm₂ : FreeMonoid α) 
     : fm₁ <:*: fm₂ ↔ fm₁ <:+: fm₂ := 
+  Iff.rfl
+
+
+@[freemonoid_to_list]
+theorem is_proper_prefix_iff_list_is_prefix (fm₁ fm₂ : FreeMonoid α)
+    : fm₁ <<*: fm₂ ↔ fm₁ <<+: fm₂ :=
+  Iff.rfl
+
+@[freemonoid_to_list]
+theorem is_proper_suffix_iff_list_is_suffix (fm₁ fm₂ : FreeMonoid α)
+    : fm₁ <<:* fm₂ ↔ fm₁ <<:+ fm₂ :=
+  Iff.rfl
+
+@[freemonoid_to_list]
+theorem is_proper_infix_iff_list_is_infix (fm₁ fm₂ : FreeMonoid α)
+    : fm₁ <<:*: fm₂ ↔ fm₁ <<:+: fm₂ :=
   Iff.rfl
 
 

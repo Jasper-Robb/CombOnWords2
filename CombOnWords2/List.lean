@@ -86,4 +86,50 @@ theorem get_eq_of_prefix {l₁ l₂ : List α} (h : l₁ <+: l₂) {n : ℕ} (hn
   simpa [← List.get?_eq_get] using get?_eq_of_prefix h hn
 
 
+def IsProperPrefix (l₁ l₂ : List α) : Prop :=
+  ∃ t ≠ [], l₁ ++ t = l₂
+
+def IsProperSuffix (l₁ l₂ : List α) : Prop :=
+  ∃ s ≠ [], s ++ l₁ = l₂
+
+def IsProperInfix (l₁ l₂ : List α) : Prop :=
+  ∃ s t, s ≠ [] ∧ t ≠ [] ∧ s ++ l₁ ++ t = l₂
+
+
+infixl:50 " <<+: " => IsProperPrefix
+infixl:50 " <<:+ " => IsProperSuffix
+infixl:50 " <<:+: " => IsProperInfix
+
+
+theorem is_proper_prefix_iff₁ (l₁ l₂ : List α) 
+    : l₁ <<+: l₂ ↔ l₁ <+: l₂ ∧ l₁.length < l₂.length := by
+  constructor
+  · intro ⟨t, htl, htr⟩
+    constructor
+    · exact ⟨t, htr⟩
+    · rw [← htr, length_append]
+      exact Nat.lt_add_of_pos_right (length_pos.mpr htl)
+  · intro ⟨⟨t, ht⟩, h⟩
+    exists t
+    constructor
+    · rw [← ht, length_append] at h
+      exact length_pos.mp (Nat.pos_of_lt_add_right h)
+    · exact ht
+
+theorem is_proper_prefix_iff₂ (l₁ l₂ : List α) 
+    : l₁ <<+: l₂ ↔ l₁ <+: l₂ ∧ l₁ ≠ l₂ := by
+  constructor
+  · intro ⟨t, htl, htr⟩
+    constructor
+    · exact ⟨t, htr⟩
+    · suffices l₁.length ≠ l₂.length by exact this ∘ (congrArg length) 
+      rw [← htr, length_append]
+      exact Nat.ne_of_lt (Nat.lt_add_of_pos_right (length_pos.mpr htl))
+  · exact fun ⟨⟨t, ht⟩, h⟩ ↦ ⟨t, ⟨fun hc ↦ h (by rw [← ht, hc, append_nil]), ht⟩⟩
+
+
+instance [DecidableEq α] (l₁ l₂ : List α) : Decidable (l₁ <<+: l₂) :=
+  decidable_of_decidable_of_iff <| (is_proper_prefix_iff₁ l₁ l₂).symm
+
+
 end List
