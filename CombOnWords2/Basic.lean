@@ -3,12 +3,16 @@ import CombOnWords2.List
 import Mathlib.Algebra.FreeMonoid.Basic
 import Mathlib.Data.Nat.Digits
 import Mathlib.Data.Nat.SuccPred
+import Mathlib.Data.List.Infix
 
 
 infixr:90 " ∘* " => MonoidHom.comp
 
 
 namespace FreeMonoid
+
+
+section Init
 
 
 @[freemonoid_to_list]
@@ -113,6 +117,12 @@ theorem reverse_reverse (fm : FreeMonoid α) : fm.reverse.reverse = fm :=
   List.reverse_reverse fm
 
 
+end Init -- Close section
+
+
+section NonErasing
+
+
 def NonErasing (f : FreeMonoid α →* FreeMonoid β) : Prop :=
   ∀ (fm : FreeMonoid α), 0 < |fm| → 0 < |f fm|
 
@@ -152,6 +162,12 @@ theorem bind_nonerasing {f : α → FreeMonoid β} (hf : ∀ x, 0 < |f x|)
   · simpa [freemonoid_to_list] using Or.inl <| hf l 
 
 
+end NonErasing -- Close section
+
+
+section Uniform
+
+
 def Uniform (f : FreeMonoid α →* FreeMonoid β) (c : ℕ) : Prop :=
   ∀ fm, |f fm| = c * |fm|
 
@@ -187,8 +203,14 @@ theorem length_lt_of_pow (f : Monoid.End (FreeMonoid α)) (c : ℕ) [IsUniform f
   simpa [length_pow_uniform f c n [x], freemonoid_to_list]
 
 
+end Uniform -- Close section
+
+
 theorem morphism_to_bind (f : FreeMonoid α →* FreeMonoid β) : f = bind (f ∘ of) :=
   hom_eq <| by simp [freemonoid_to_list]
+
+
+section Infix
 
 
 def IsPrefix (fm₁ : FreeMonoid α) (fm₂ : FreeMonoid α) : Prop :=
@@ -201,13 +223,13 @@ def IsInfix (fm₁ : FreeMonoid α) (fm₂ : FreeMonoid α) : Prop :=
   ∃ s t, s * fm₁ * t = fm₂
 
 
-def IsProperPrefix (fm₁ fm₂ : FreeMonoid α) : Prop :=
+def IsPPrefix (fm₁ fm₂ : FreeMonoid α) : Prop :=
   ∃ t ≠ 1, fm₁ * t = fm₂
 
-def IsProperSuffix (fm₁ fm₂ : FreeMonoid α) : Prop :=
+def IsPSuffix (fm₁ fm₂ : FreeMonoid α) : Prop :=
   ∃ s ≠ 1, s * fm₁ = fm₂
 
-def IsProperInfix (fm₁ fm₂ : FreeMonoid α) : Prop :=
+def IsPInfix (fm₁ fm₂ : FreeMonoid α) : Prop :=
   ∃ s t, s ≠ 1 ∧ t ≠ 1 ∧ s * fm₁ * t = fm₂
 
 
@@ -215,9 +237,9 @@ infixl:50 " <*: " => IsPrefix
 infixl:50 " <:* " => IsSuffix
 infixl:50 " <:*: " => IsInfix
 
-infixl:50 " <<*: " => IsProperPrefix
-infixl:50 " <<:* " => IsProperSuffix
-infixl:50 " <<:*: " => IsProperInfix
+infixl:50 " <<*: " => IsPPrefix
+infixl:50 " <<:* " => IsPSuffix
+infixl:50 " <<:*: " => IsPInfix
 
 
 instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <*: fm₂) :=
@@ -247,17 +269,17 @@ theorem is_infix_iff_list_is_infix (fm₁ fm₂ : FreeMonoid α)
 
 
 @[freemonoid_to_list]
-theorem is_proper_prefix_iff_list_is_prefix (fm₁ fm₂ : FreeMonoid α)
+theorem is_p_prefix_iff_list_is_p_prefix (fm₁ fm₂ : FreeMonoid α)
     : fm₁ <<*: fm₂ ↔ fm₁ <<+: fm₂ :=
   Iff.rfl
 
 @[freemonoid_to_list]
-theorem is_proper_suffix_iff_list_is_suffix (fm₁ fm₂ : FreeMonoid α)
+theorem is_p_suffix_iff_list_is_p_suffix (fm₁ fm₂ : FreeMonoid α)
     : fm₁ <<:* fm₂ ↔ fm₁ <<:+ fm₂ :=
   Iff.rfl
 
 @[freemonoid_to_list]
-theorem is_proper_infix_iff_list_is_infix (fm₁ fm₂ : FreeMonoid α)
+theorem is_p_infix_iff_list_is_p_infix (fm₁ fm₂ : FreeMonoid α)
     : fm₁ <<:*: fm₂ ↔ fm₁ <<:+: fm₂ :=
   Iff.rfl
 
@@ -289,16 +311,6 @@ theorem is_infix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <:*: fm₂) (f :
   congr
 
 
-def RightExtensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
-  {p | fm <*: p}
-
-def LeftExtensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
-  {s | fm <:* s}
-
-def Extensions (fm : FreeMonoid α) : Set (FreeMonoid α) :=
-  RightExtensions fm ∪ LeftExtensions fm 
-
-
 @[freemonoid_to_list]
 def inits : FreeMonoid α → FreeMonoid (FreeMonoid α) :=
   List.inits
@@ -310,6 +322,22 @@ def tails : FreeMonoid α → FreeMonoid (FreeMonoid α) :=
 @[freemonoid_to_list]
 def infixes : FreeMonoid α → FreeMonoid (FreeMonoid α) :=
   List.infixes
+
+
+theorem mem_inits (u v : FreeMonoid α) : u ∈ v.inits ↔ u <*: v :=
+  List.mem_inits u v
+
+theorem mem_tails (u v : FreeMonoid α) : u ∈ v.tails ↔ u <:* v :=
+  List.mem_tails u v
+
+theorem mem_infixes (u v : FreeMonoid α) : u ∈ v.infixes ↔ u <:*: v :=
+  List.mem_infixes u v
+
+
+end Infix -- Close section
+
+
+section Overlap
 
 
 def Overlap (fm : FreeMonoid α) : Prop :=
@@ -416,6 +444,9 @@ instance [DecidableEq α] (fm : FreeMonoid α) : Decidable (Overlap fm) :=
 
 instance [DecidableEq α] (u : FreeMonoid α) : Decidable (HasOverlap u) :=
   decidable_of_decidable_of_iff <| has_overlap_iff u
+
+
+end Overlap
 
 
 end FreeMonoid -- Close namespace
@@ -618,7 +649,7 @@ instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f
         fun h w _ hw₂ ↦ h w hw₂⟩
 
 
-end Decidable -- End section
+end Decidable -- Close section
 
 
 section PDF_Questions
@@ -888,4 +919,4 @@ theorem chapter1_question7 (n : ℕ) : (μ^n : Monoid.End _) [0] = X n := by
                  _ = X k.succ                    := by rfl
 
 
-end PDF_Questions -- End section
+end PDF_Questions -- Close section
