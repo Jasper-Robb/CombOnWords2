@@ -233,78 +233,78 @@ def IsPInfix (fm₁ fm₂ : FreeMonoid α) : Prop :=
   ∃ s t, s ≠ 1 ∧ t ≠ 1 ∧ s * fm₁ * t = fm₂
 
 
-infixl:50 " <*: " => IsPrefix
-infixl:50 " <:* " => IsSuffix
-infixl:50 " <:*: " => IsInfix
+infixl:50 " ≤ₚ " => IsPrefix
+infixl:50 " ≤ₛ " => IsSuffix
+infixl:50 " ≤ᵢ " => IsInfix
 
-infixl:50 " <<*: " => IsPPrefix
-infixl:50 " <<:* " => IsPSuffix
-infixl:50 " <<:*: " => IsPInfix
+infixl:50 " <ₚ " => IsPPrefix
+infixl:50 " <ₛ " => IsPSuffix
+infixl:50 " <ᵢ " => IsPInfix
 
 
-instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <*: fm₂) :=
+instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ ≤ₚ fm₂) :=
   inferInstanceAs <| Decidable (fm₁ <+: fm₂)
 
-instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <:* fm₂) :=
+instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ ≤ₛ fm₂) :=
   inferInstanceAs <| Decidable (fm₁ <:+ fm₂)
 
-instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ <:*: fm₂) :=
+instance [DecidableEq α] (fm₁ fm₂ : FreeMonoid α) : Decidable (fm₁ ≤ᵢ fm₂) :=
   inferInstanceAs <| Decidable (fm₁ <:+: fm₂)
 
 
 @[freemonoid_to_list]
 theorem is_prefix_iff_list_is_prefix (fm₁ fm₂ : FreeMonoid α) 
-    : fm₁ <*: fm₂ ↔ fm₁ <+: fm₂ := 
+    : fm₁ ≤ₚ fm₂ ↔ fm₁ <+: fm₂ := 
   Iff.rfl
 
 @[freemonoid_to_list]
 theorem is_suffix_iff_list_is_suffix (fm₁ fm₂ : FreeMonoid α) 
-    : fm₁ <:* fm₂ ↔ fm₁ <:+ fm₂ :=
+    : fm₁ ≤ₛ fm₂ ↔ fm₁ <:+ fm₂ :=
   Iff.rfl
 
 @[freemonoid_to_list]
 theorem is_infix_iff_list_is_infix (fm₁ fm₂ : FreeMonoid α) 
-    : fm₁ <:*: fm₂ ↔ fm₁ <:+: fm₂ := 
+    : fm₁ ≤ᵢ fm₂ ↔ fm₁ <:+: fm₂ := 
   Iff.rfl
 
 
 @[freemonoid_to_list]
 theorem is_p_prefix_iff_list_is_p_prefix (fm₁ fm₂ : FreeMonoid α)
-    : fm₁ <<*: fm₂ ↔ fm₁ <<+: fm₂ :=
+    : fm₁ <ₚ fm₂ ↔ fm₁ <<+: fm₂ :=
   Iff.rfl
 
 @[freemonoid_to_list]
 theorem is_p_suffix_iff_list_is_p_suffix (fm₁ fm₂ : FreeMonoid α)
-    : fm₁ <<:* fm₂ ↔ fm₁ <<:+ fm₂ :=
+    : fm₁ <ₛ fm₂ ↔ fm₁ <<:+ fm₂ :=
   Iff.rfl
 
 @[freemonoid_to_list]
 theorem is_p_infix_iff_list_is_p_infix (fm₁ fm₂ : FreeMonoid α)
-    : fm₁ <<:*: fm₂ ↔ fm₁ <<:+: fm₂ :=
+    : fm₁ <ᵢ fm₂ ↔ fm₁ <<:+: fm₂ :=
   Iff.rfl
 
 
 @[simp]
-theorem reverse_infix (fm₁ fm₂ : FreeMonoid α) : fm₁.reverse <:*: fm₂.reverse ↔ fm₁ <:*: fm₂ :=
+theorem reverse_infix (fm₁ fm₂ : FreeMonoid α) : fm₁.reverse ≤ᵢ fm₂.reverse ↔ fm₁ ≤ᵢ fm₂ :=
   List.reverse_infix
 
 
-theorem is_prefix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <*: fm₂) (f : FreeMonoid α →* FreeMonoid β)
-    : (f fm₁) <*: (f fm₂) := by
+theorem is_prefix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ ≤ₚ fm₂) (f : FreeMonoid α →* FreeMonoid β)
+    : (f fm₁) ≤ₚ (f fm₂) := by
   obtain ⟨t, _⟩ := h
   exists f t
   rw [← map_mul]
   congr
 
-theorem is_suffix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <:* fm₂) (f : FreeMonoid α →* FreeMonoid β)
-    : (f fm₁) <:* (f fm₂) := by
+theorem is_suffix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ ≤ₛ fm₂) (f : FreeMonoid α →* FreeMonoid β)
+    : (f fm₁) ≤ₛ (f fm₂) := by
   obtain ⟨s, _⟩ := h
   exists f s
   rw [← map_mul]
   congr
 
-theorem is_infix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ <:*: fm₂) (f : FreeMonoid α →* FreeMonoid β)
-    : (f fm₁) <:*: (f fm₂) := by
+theorem is_infix_congr {fm₁ fm₂ : FreeMonoid α} (h : fm₁ ≤ᵢ fm₂) (f : FreeMonoid α →* FreeMonoid β)
+    : (f fm₁) ≤ᵢ (f fm₂) := by
   obtain ⟨s, t, _⟩ := h
   exists f s, f t
   simp only [← map_mul]
@@ -324,13 +324,13 @@ def infixes : FreeMonoid α → FreeMonoid (FreeMonoid α) :=
   List.infixes
 
 
-theorem mem_inits (u v : FreeMonoid α) : u ∈ v.inits ↔ u <*: v :=
+theorem mem_inits (u v : FreeMonoid α) : u ∈ v.inits ↔ u ≤ₚ v :=
   List.mem_inits u v
 
-theorem mem_tails (u v : FreeMonoid α) : u ∈ v.tails ↔ u <:* v :=
+theorem mem_tails (u v : FreeMonoid α) : u ∈ v.tails ↔ u ≤ₛ v :=
   List.mem_tails u v
 
-theorem mem_infixes (u v : FreeMonoid α) : u ∈ v.infixes ↔ u <:*: v :=
+theorem mem_infixes (u v : FreeMonoid α) : u ∈ v.infixes ↔ u ≤ᵢ v :=
   List.mem_infixes u v
 
 
@@ -344,7 +344,7 @@ def Overlap (fm : FreeMonoid α) : Prop :=
   ∃ B : FreeMonoid α, 0 < |B| ∧ fm = B * B * B.take 1
 
 def HasOverlap (fm : FreeMonoid α) : Prop :=
-  ∃ u : FreeMonoid α, Overlap u ∧ u <:*: fm
+  ∃ u : FreeMonoid α, Overlap u ∧ u ≤ᵢ fm
 
 
 theorem overlap_of_nonerasing {f : FreeMonoid α →* FreeMonoid β} [hf : IsNonErasing f]
@@ -353,7 +353,7 @@ theorem overlap_of_nonerasing {f : FreeMonoid α →* FreeMonoid β} [hf : IsNon
   exists f B * f B * (f B).take 1
   constructor
   · exact ⟨f B, hf.nonerasing B hBl, rfl⟩
-  · suffices f B * f B * (f B).take 1 <*: f u by
+  · suffices f B * f B * (f B).take 1 ≤ₚ f u by
       exact List.IsInfix.trans (List.IsPrefix.isInfix this) <| is_infix_congr hur f
     simp only [hBr, map_mul]
     cases' B using FreeMonoid.casesOn
@@ -434,7 +434,7 @@ theorem has_overlap_iff (fm : FreeMonoid α)
   ⟨fun ⟨u, hul, hur⟩ ↦ ⟨u, ⟨hur, (List.mem_infixes u fm).mp hul⟩⟩,
    fun ⟨u, hul, hur⟩ ↦ ⟨u, ⟨(List.mem_infixes u fm).mpr hur, hul⟩⟩⟩
 
-theorem factor_no_overlap_of_no_overlap {fm₁ fm₂ : FreeMonoid α} (hvw : fm₁ <:*: fm₂) (hw : ¬HasOverlap fm₂)
+theorem factor_no_overlap_of_no_overlap {fm₁ fm₂ : FreeMonoid α} (hvw : fm₁ ≤ᵢ fm₂) (hw : ¬HasOverlap fm₂)
     : ¬HasOverlap fm₁ :=
   fun ⟨u, hul, hur⟩ => hw ⟨u, ⟨hul, List.IsInfix.trans hur hvw⟩⟩
 
@@ -564,22 +564,22 @@ instance [DecidablePred p] : Decidable (∀ w : FreeMonoid α, |w| ≤ n → p w
     forall_congr' fun w ↦ imp_congr_left <| (mem_allFreeMonoidsMaxLength_iff (n+1) w).trans Nat.lt_succ
 
 
-instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∃ w , w <*: fm ∧ p w) :=
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∃ w , w ≤ₚ fm ∧ p w) :=
   decidable_of_decidable_of_iff <| exists_congr fun w ↦ and_congr_left fun _ ↦ List.mem_inits w fm
 
-instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∃ w, w <:* fm ∧ p w) :=
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∃ w, w ≤ₛ fm ∧ p w) :=
   decidable_of_decidable_of_iff <| exists_congr fun w ↦ and_congr_left fun _ ↦ List.mem_tails w fm
 
-instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∃ w, w <:*: fm ∧ p w) :=
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∃ w, w ≤ᵢ fm ∧ p w) :=
   decidable_of_decidable_of_iff <| exists_congr fun w ↦ and_congr_left fun _ ↦ List.mem_infixes w fm
 
-instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∀ w, w <*: fm → p w) :=
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∀ w, w ≤ₚ fm → p w) :=
   decidable_of_decidable_of_iff <| forall_congr' fun w ↦ imp_congr_left <| List.mem_inits w fm
 
-instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∀ w, w <:* fm → p w) :=
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∀ w, w ≤ₛ fm → p w) :=
   decidable_of_decidable_of_iff <| forall_congr' fun w ↦ imp_congr_left <| List.mem_tails w fm
 
-instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∀ w, w <:*: fm → p w) :=
+instance [DecidablePred p] {fm : FreeMonoid α} : Decidable (∀ w, w ≤ᵢ fm → p w) :=
   decidable_of_decidable_of_iff <| forall_congr' fun w ↦ imp_congr_left <| List.mem_infixes w fm
 
 
@@ -607,44 +607,44 @@ instance [IsNonErasing f] [DecidablePred p] : Decidable (∀ w : FreeMonoid α, 
 
 
 instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
-    : Decidable (∃ w : FreeMonoid α, f w <*: fm ∧ p w) :=
+    : Decidable (∃ w : FreeMonoid α, f w ≤ₚ fm ∧ p w) :=
   decidable_of_decidable_of_iff <|
-    show (∃ w : FreeMonoid α, |w| ≤ |fm| ∧ f w <*: fm ∧ p w) ↔ (∃ w, f w <*: fm ∧ p w) from
+    show (∃ w : FreeMonoid α, |w| ≤ |fm| ∧ f w ≤ₚ fm ∧ p w) ↔ (∃ w, f w ≤ₚ fm ∧ p w) from
       ⟨fun ⟨w, _, hw₂, hw₃⟩ ↦ Exists.intro w ⟨hw₂, hw₃⟩,
         fun ⟨w, hw₁, hw₂⟩ ↦ ⟨w, ⟨Nat.le_trans (nonerasing_length_le f w) (List.IsPrefix.length_le hw₁), hw₁, hw₂⟩⟩⟩
 
 instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
-    : Decidable (∃ w : FreeMonoid α, f w <:* fm ∧ p w) :=
+    : Decidable (∃ w : FreeMonoid α, f w ≤ₛ fm ∧ p w) :=
   decidable_of_decidable_of_iff <|
-    show (∃ w : FreeMonoid α, |w| ≤ |fm| ∧ f w <:* fm ∧ p w) ↔ (∃ w, f w <:* fm ∧ p w) from
+    show (∃ w : FreeMonoid α, |w| ≤ |fm| ∧ f w ≤ₛ fm ∧ p w) ↔ (∃ w, f w ≤ₛ fm ∧ p w) from
       ⟨fun ⟨w, _, hw₂, hw₃⟩ ↦ Exists.intro w ⟨hw₂, hw₃⟩,
         fun ⟨w, hw₁, hw₂⟩ ↦ ⟨w, ⟨Nat.le_trans (nonerasing_length_le f w) (List.IsSuffix.length_le hw₁), hw₁, hw₂⟩⟩⟩
 
 instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
-    : Decidable (∃ w : FreeMonoid α, f w <:*: fm ∧ p w) :=
+    : Decidable (∃ w : FreeMonoid α, f w ≤ᵢ fm ∧ p w) :=
   decidable_of_decidable_of_iff <|
-    show (∃ w : FreeMonoid α, |w| ≤ |fm| ∧ f w <:*: fm ∧ p w) ↔ (∃ w, f w <:*: fm ∧ p w) from
+    show (∃ w : FreeMonoid α, |w| ≤ |fm| ∧ f w ≤ᵢ fm ∧ p w) ↔ (∃ w, f w ≤ᵢ fm ∧ p w) from
       ⟨fun ⟨w, _, hw₂, hw₃⟩ ↦ Exists.intro w ⟨hw₂, hw₃⟩,
         fun ⟨w, hw₁, hw₂⟩ ↦ ⟨w, ⟨Nat.le_trans (nonerasing_length_le f w) (List.IsInfix.length_le hw₁), hw₁, hw₂⟩⟩⟩
 
 instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
-    : Decidable (∀ w : FreeMonoid α, f w <*: fm → p w) :=
+    : Decidable (∀ w : FreeMonoid α, f w ≤ₚ fm → p w) :=
   decidable_of_decidable_of_iff <|
-    show (∀ w : FreeMonoid α, |w| ≤ |fm| → f w <*: fm → p w) ↔ (∀ w, f w <*: fm → p w) from
+    show (∀ w : FreeMonoid α, |w| ≤ |fm| → f w ≤ₚ fm → p w) ↔ (∀ w, f w ≤ₚ fm → p w) from
       ⟨fun h w hw ↦ h w (Nat.le_trans (nonerasing_length_le f w) (List.IsPrefix.length_le hw)) hw,
         fun h w _ hw₂ ↦ h w hw₂⟩
 
 instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
-    : Decidable (∀ w : FreeMonoid α, f w <:* fm → p w) :=
+    : Decidable (∀ w : FreeMonoid α, f w ≤ₛ fm → p w) :=
   decidable_of_decidable_of_iff <|
-    show (∀ w : FreeMonoid α, |w| ≤ |fm| → f w <:* fm → p w) ↔ (∀ w, f w <:* fm → p w) from
+    show (∀ w : FreeMonoid α, |w| ≤ |fm| → f w ≤ₛ fm → p w) ↔ (∀ w, f w ≤ₛ fm → p w) from
       ⟨fun h w hw ↦ h w (Nat.le_trans (nonerasing_length_le f w) (List.IsSuffix.length_le hw)) hw,
         fun h w _ hw₂ ↦ h w hw₂⟩
 
 instance [DecidableEq β] {f : FreeMonoid α →* FreeMonoid β} [IsNonErasing f] [DecidablePred p] {fm : FreeMonoid β}
-    : Decidable (∀ w : FreeMonoid α, f w <:*: fm → p w) :=
+    : Decidable (∀ w : FreeMonoid α, f w ≤ᵢ fm → p w) :=
   decidable_of_decidable_of_iff <|
-    show (∀ w : FreeMonoid α, |w| ≤ |fm| → f w <:*: fm → p w) ↔ (∀ w, f w <:*: fm → p w) from
+    show (∀ w : FreeMonoid α, |w| ≤ |fm| → f w ≤ᵢ fm → p w) ↔ (∀ w, f w ≤ᵢ fm → p w) from
       ⟨fun h w hw ↦ h w (Nat.le_trans (nonerasing_length_le f w) (List.IsInfix.length_le hw)) hw,
         fun h w _ hw₂ ↦ h w hw₂⟩
 
@@ -758,9 +758,9 @@ instance : IsTrans (FreeMonoid α) lengthLe :=
   ⟨fun _ _ _ ↦ Nat.le_trans⟩
 
 theorem exists_longest_μ_infix (w : FreeMonoid (Fin 2)) 
-    : ∃ v, μ v <:*: w ∧ ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w := by
+    : ∃ v, μ v ≤ᵢ w ∧ ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ ≤ᵢ w := by
   let l := List.insertionSort lengthLe
-    (List.filter (μ · <:*: w)
+    (List.filter (μ · ≤ᵢ w)
     (Multiset.toList (allFreeMonoidsMaxLength (Fin 2) (|w| + 1))))
   have hl : l ≠ [] := by
     suffices [] ∈ l by exact List.ne_nil_of_mem this
@@ -768,7 +768,7 @@ theorem exists_longest_μ_infix (w : FreeMonoid (Fin 2))
     exact ⟨nil_in_allFreeMonoidsMaxLength (|w| + 1) (Nat.succ_pos |w|), by simpa using List.nil_infix w⟩
   exists l.getLast hl
   constructor
-  · apply List.getLast_if_all (μ · <:*: w) l hl
+  · apply List.getLast_if_all (μ · ≤ᵢ w) l hl
     intro x hx
     rw [List.elem_sort_iff_elem] at hx
     have := List.of_mem_filter hx
@@ -792,15 +792,15 @@ namespace Question5
 
 
 theorem claim1 {w : FreeMonoid (Fin 2)} (hlw : 6 ≤ |w|) (hw : ¬HasOverlap w)
-    : ∃ v : FreeMonoid (Fin 2), μ v <:*: w ∧ 1 < |v| := by
-  have h₁ : ∀ w : FreeMonoid (Fin 2), |w| = 6 → ¬HasOverlap w → ∃ x : FreeMonoid (Fin 2), μ x <:*: w ∧ 1 < |x| := by
+    : ∃ v : FreeMonoid (Fin 2), μ v ≤ᵢ w ∧ 1 < |v| := by
+  have h₁ : ∀ w : FreeMonoid (Fin 2), |w| = 6 → ¬HasOverlap w → ∃ x : FreeMonoid (Fin 2), μ x ≤ᵢ w ∧ 1 < |x| := by
     decide
-  have h₂ : w.take 6 <:*: w := List.IsPrefix.isInfix <| List.take_prefix _ w
+  have h₂ : w.take 6 ≤ᵢ w := List.IsPrefix.isInfix <| List.take_prefix _ w
   obtain ⟨x, hx, hlx⟩ := h₁ (w.take 6) (List.length_take_of_le hlw) <| factor_no_overlap_of_no_overlap h₂ hw
   exact ⟨x, ⟨List.IsInfix.trans hx h₂, hlx⟩⟩
 
-theorem claim2₁ {u v z w : FreeMonoid (Fin 2)} (hv : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w)
-    (h : u * μ v * z = w) : ∀ x, ¬μ (of x) <:* u := by
+theorem claim2₁ {u v z w : FreeMonoid (Fin 2)} (hv : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ ≤ᵢ w)
+    (h : u * μ v * z = w) : ∀ x, ¬μ (of x) ≤ₛ u := by
   intro x ⟨s, hs⟩
   suffices w = s * μ (of x * v) * z by
     exact hv (of x * v) (Nat.lt.base |v|) ⟨s, z, this.symm⟩
@@ -809,8 +809,8 @@ theorem claim2₁ {u v z w : FreeMonoid (Fin 2)} (hv : ∀ v₂ : FreeMonoid (Fi
     _ = s * μ (of x) * μ v * z := by rw [← hs] 
     _ = s * μ (of x * v) * z   := by conv => lhs; lhs; rw [mul_assoc, ← map_mul]
 
-theorem claim2₂ {u v z w : FreeMonoid (Fin 2)} (hv : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w)
-    (h : u * μ v * z = w) : ∀ x, ¬μ (of x) <*: z := by
+theorem claim2₂ {u v z w : FreeMonoid (Fin 2)} (hv : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ ≤ᵢ w)
+    (h : u * μ v * z = w) : ∀ x, ¬μ (of x) ≤ₚ z := by
   intro x ⟨t, ht⟩
   suffices w = u * μ (v * of x) * t by
     exact hv (v * of x) (by simp [freemonoid_to_list]) ⟨u, t, this.symm⟩
@@ -820,7 +820,7 @@ theorem claim2₂ {u v z w : FreeMonoid (Fin 2)} (hv : ∀ v₂ : FreeMonoid (Fi
     _ = u * μ (v * of x) * t   := by conv => lhs; lhs; rw [mul_assoc, ← map_mul]
 
 theorem claim3₁ {u v z w : FreeMonoid (Fin 2)} (hw₁ : ¬HasOverlap w) (hw₂ : u * μ v * z = w)
-    (hv₁ : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w) (hv₂ : 1 < |v|) : |u| < 3 := by
+    (hv₁ : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ ≤ᵢ w) (hv₂ : 1 < |v|) : |u| < 3 := by
   by_contra hu₁
   rw [Nat.not_lt, ← Nat.lt_succ] at hu₁
   have hc₁ : ¬HasOverlap (u.rtake 3) := by 
@@ -828,7 +828,7 @@ theorem claim3₁ {u v z w : FreeMonoid (Fin 2)} (hw₁ : ¬HasOverlap w) (hw₂
     exists u.rdrop 3, μ v * z
     simp only [freemonoid_to_list, List.append_assoc] at hw₂
     simpa only [freemonoid_to_list, List.rdrop_append_rtake]
-  have hc₂ : ∀ x : Fin 2, ¬μ (of x) <:* (u.rtake 3) := 
+  have hc₂ : ∀ x : Fin 2, ¬μ (of x) ≤ₛ (u.rtake 3) := 
     fun x hxu ↦ claim2₁ hv₁ hw₂ x <| List.IsSuffix.trans hxu <| List.rtake_suffix 3 u
   have hc₃ : ¬HasOverlap (u.rtake 3 * μ (v.take 2)) := by
     refine factor_no_overlap_of_no_overlap ?_ hw₁
@@ -850,7 +850,7 @@ theorem claim3₁ {u v z w : FreeMonoid (Fin 2)} (hw₁ : ¬HasOverlap w) (hw₂
   all_goals apply hc₃; rw [hu₂', hv₃']; decide
 
 theorem claim3₂ {u v z w : FreeMonoid (Fin 2)} (hw₁ : ¬HasOverlap w) (hw₂ : u * μ v * z = w)
-    (hv₁ : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w) (hv₂ : 1 < |v|) : |z| < 3 := by
+    (hv₁ : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ ≤ᵢ w) (hv₂ : 1 < |v|) : |z| < 3 := by
   rw [← length_reverse]
   apply @claim3₁ z.reverse (~v.reverse) u.reverse w.reverse
   · rwa [← has_overlap_reverse_iff]
@@ -872,7 +872,7 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
     revert w
     conv => 
       intro w; rw [forall_comm]; intro h1 h2; rhs; intro u; rhs; rhs; intro z; rhs; rhs; intro v; lhs; 
-      rw [show w = u * μ v * z ↔ μ v <:*: w ∧ w = u * μ v * z from ⟨fun h ↦ ⟨⟨u, z, h.symm⟩, h⟩, And.right⟩]
+      rw [show w = u * μ v * z ↔ μ v ≤ᵢ w ∧ w = u * μ v * z from ⟨fun h ↦ ⟨⟨u, z, h.symm⟩, h⟩, And.right⟩]
     simp only [and_assoc]
     decide
   | inr hlw =>
