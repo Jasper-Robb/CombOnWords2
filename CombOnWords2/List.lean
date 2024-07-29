@@ -75,4 +75,105 @@ theorem filter_ne_nil_iff_elem (p : α → Prop) [DecidablePred p] (l : List α)
   simp only [ne_nil_iff_exists_elem, List.mem_filter, decide_eq_true_eq]
 
 
+def IsStrictPrefix (l₁ l₂ : List α) : Prop :=
+  ∃ t ≠ [], l₁ ++ t = l₂
+
+def IsStrictSuffix (l₁ l₂ : List α) : Prop :=
+  ∃ s ≠ [], s ++ l₁ = l₂
+
+def IsStrictInfix (l₁ l₂ : List α) : Prop :=
+  ∃ s t, s ≠ [] ∧ t ≠ [] ∧ s ++ l₁ ++ t = l₂
+
+
+infixl:50 " <<+: " => IsStrictPrefix
+infixl:50 " <<:+ " => IsStrictSuffix
+infixl:50 " <<:+: " => IsStrictInfix
+
+
+namespace IsStrictPrefix
+
+
+theorem iff_prefix_len_lt (l₁ l₂ : List α) 
+    : l₁ <<+: l₂ ↔ l₁ <+: l₂ ∧ l₁.length < l₂.length := by
+  constructor
+  · intro ⟨t, htl, htr⟩
+    constructor
+    · exact ⟨t, htr⟩
+    · rw [← htr, length_append]
+      exact Nat.lt_add_of_pos_right (length_pos.mpr htl)
+  · intro ⟨⟨t, ht⟩, h⟩
+    exists t
+    constructor
+    · rw [← ht, length_append] at h
+      exact length_pos.mp (Nat.pos_of_lt_add_right h)
+    · exact ht
+
+theorem iff_prefix_ne (l₁ l₂ : List α) 
+    : l₁ <<+: l₂ ↔ l₁ <+: l₂ ∧ l₁ ≠ l₂ := by
+  constructor
+  · intro ⟨t, htl, htr⟩
+    constructor
+    · exact ⟨t, htr⟩
+    · suffices l₁.length ≠ l₂.length by exact this ∘ (congrArg length) 
+      rw [← htr, length_append]
+      exact Nat.ne_of_lt (Nat.lt_add_of_pos_right (length_pos.mpr htl))
+  · exact fun ⟨⟨t, ht⟩, h⟩ ↦ ⟨t, ⟨fun hc ↦ h (by rw [← ht, hc, append_nil]), ht⟩⟩
+
+
+theorem trans {l₁ l₂ l₃ : List α} (h₁ : l₁ <<+: l₂) (h₂ : l₂ <<+: l₃)
+    : (l₁ <<+: l₃) := by
+  obtain ⟨t₁, htl₁, htr₁⟩ := h₁
+  obtain ⟨t₂, _, htr₂⟩ := h₂
+  exists t₁ ++ t₂
+  constructor
+  · exact append_ne_nil_of_left_ne_nil t₁ _ htl₁
+  · rw [← append_assoc, htr₁, htr₂]
+
+
+theorem length_lt {l₁ l₂ : List α} (h : l₁ <<+: l₂) : l₁.length < l₂.length :=
+  ((iff_prefix_len_lt l₁ l₂).mp h).right
+
+
+instance [DecidableEq α] (l₁ l₂ : List α) : Decidable (l₁ <<+: l₂) :=
+  decidable_of_decidable_of_iff <| (iff_prefix_len_lt l₁ l₂).symm
+
+
+end IsStrictPrefix
+
+
+theorem spx_of_px_of_spx {l₁ l₂ l₃ : List α} (h₁ : l₁ <+: l₂) (h₂ : l₂ <<+: l₃)
+    : l₁ <<+: l₃ := by
+  obtain ⟨t₁, ht⟩ := h₁
+  obtain ⟨t₂, htl, htr⟩ := h₂
+  exists t₁ ++ t₂
+  constructor
+  · exact append_ne_nil_of_ne_nil_right t₁ t₂ htl
+  · rw [← append_assoc, ht, htr]
+
+
+theorem prefix_of_eq {l₁ l₂ : List α} (h : l₁ = l₂) : l₁ <+: l₂ := by
+  rw [h]; exact prefix_rfl
+
+theorem suffix_of_eq {l₁ l₂ : List α} (h : l₁ = l₂) : l₁ <:+ l₂ := by
+  rw [h]; exact suffix_rfl
+
+theorem infix_of_eq {l₁ l₂ : List α} (h : l₁ = l₂) : l₁ <:+: l₂ := by
+  rw [h]; exact infix_rfl
+
+
+theorem get?_eq_of_prefix {l₁ l₂ : List α} (h : l₁ <+: l₂) {n : ℕ} (hn : n < l₁.length)
+    : l₁.get? n = l₂.get? n := by
+  obtain ⟨t, ht⟩ := h
+  rw [← ht, List.get?_append hn]
+
+theorem get_eq_of_prefix {l₁ l₂ : List α} (h : l₁ <+: l₂) {n : ℕ} (hn : n < l₁.length)
+    : l₁.get ⟨n, hn⟩ = l₂.get ⟨n, Nat.lt_of_lt_of_le hn (IsPrefix.length_le h)⟩ := by
+  apply Option.some_injective _
+  simpa [← List.get?_eq_get] using get?_eq_of_prefix h hn
+
+
+theorem prefix_of_proper_prefix {l₁ l₂ : List α} : l₁ <<+: l₂ → l₁ <+: l₂ :=
+  fun ⟨t, _, htr⟩ ↦ ⟨t, htr⟩
+
+
 end List
