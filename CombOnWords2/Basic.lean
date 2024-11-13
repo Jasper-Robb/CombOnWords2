@@ -14,6 +14,8 @@ namespace FreeMonoid
 
 section Init
 
+@[simp]
+theorem toList_eq_id {w : FreeMonoid α} : toList w = w := rfl
 
 @[freemonoid_to_list]
 def toList' (w : FreeMonoid α) : List α := w
@@ -430,6 +432,22 @@ end Border
 
 
 section Periodic
+
+
+theorem period_ne_nil_of_perroot {r w : FreeMonoid α} (h : w <ₚ r * w)
+    : r ≠ 1 := by
+  have : |w| < |r * w| := List.IsStrictPrefix.length_lt h
+  simp only [length_mul, lt_add_iff_pos_left] at this
+  exact List.length_pos.mp this
+
+theorem perroot_of_border {w b : FreeMonoid α} (hw1 : b <b w)
+    : w <ₚ (w.take (|w| - |b|)) * w := by
+  obtain ⟨hb1, hb2, hb3, _⟩ := hw1
+  nth_rewrite 4 [show w = b * (w.drop |b|) from (List.prefix_iff_eq_append.mp hb1).symm]
+  rw [← mul_assoc, show w.take (|w| - |b|) * b = w from (List.suffix_iff_eq_append.mp hb2)]
+  exact List.s_prefix_of_append w <| (not_iff_not.mpr List.drop_eq_nil_iff_le).mpr <|
+    Nat.not_le.mpr (List.IsStrictPrefix.length_lt <|
+      (List.IsStrictPrefix.iff_prefix_ne b w).mpr ⟨hb1, hb3⟩)
 
 
 theorem pow_prefix_pow (w : FreeMonoid α) {k n : ℕ} (h : k ≤ n)

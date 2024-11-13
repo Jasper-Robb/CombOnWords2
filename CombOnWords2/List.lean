@@ -158,6 +158,11 @@ instance [DecidableEq α] (l₁ l₂ : List α) : Decidable (l₁ <<+: l₂) :=
 end IsStrictPrefix
 
 
+theorem s_prefix_of_append {l₁ : List α} (l₂ : List α) (h : l₁ ≠ [])
+    : l₂ <<+: l₂ ++ l₁ :=
+  ⟨l₁, h, rfl⟩
+
+
 theorem spx_of_px_of_spx {l₁ l₂ l₃ : List α} (h₁ : l₁ <+: l₂) (h₂ : l₂ <<+: l₃)
     : l₁ <<+: l₃ := by
   obtain ⟨t₁, ht⟩ := h₁
