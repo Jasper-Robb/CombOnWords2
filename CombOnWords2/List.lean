@@ -60,10 +60,10 @@ theorem reverse_take_one (l : List α) : (l.take 1).reverse = l.take 1 := by
     rfl
 
 
-theorem prefix_append_of_prefix {l1 l2 : List α} (l3 : List α) (h : l1 <+: l2)
-    : l1 <+: l2 ++ l3 := by
+theorem prefix_append_of_prefix {l₁ l₂ : List α} (l₃ : List α) (h : l₁ <+: l₂)
+    : l₁ <+: l₂ ++ l₃ := by
   obtain ⟨t, ht⟩ := h
-  exists t ++ l3
+  exists t ++ l₃
   rw [← append_assoc, ht]
 
 
