@@ -491,6 +491,33 @@ theorem take_of_pow {r : FreeMonoid α} {n k : ℕ} (h : k ≤ n * |r|)
       · exact Nat.le_of_lt <| Nat.mod_lt k hr
 
 
+theorem pow_mul_take_of_perroot {r w : FreeMonoid α} (hw : w ≠ 1) (h : w <ₚ r * w)
+    : w = r ^ (|w| / |r|) * r.take (|w| % |r|) := by
+  have hr : r ≠ 1 := period_ne_nil_of_perroot h
+  obtain ⟨t, _, ht⟩ := h
+  have : ∀ n, r^n * w = w * t^n := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ k ih => rw [pow_succ, mul_assoc, ih, ← mul_assoc, ← ht, mul_assoc, ← pow_succ]
+  have : ∀ n, r^n <ₚ w * t^n := fun n ↦ ⟨w, hw, this n⟩
+  have hwl := (Nat.div_add_mod' |w| |r|).symm
+  have : w <ₚ r^(|w| / |r| + 1) := by
+    apply List.s_prefix_of_s_prefix_append (this (|w| / |r| + 1))
+    simp only [toList_eq_id, ← length_eq_list_length, length_pow, Nat.add_mul, one_mul]
+    suffices |w| - |w| / |r| * |r| < |r| by exact lt_add_of_tsub_lt_left this
+    rw [tsub_eq_of_eq_add_rev hwl]
+    exact Nat.mod_lt |w| <| List.length_pos.mpr hr
+  have : w = (r^(|w| / |r| + 1)).take |w| :=
+    List.prefix_iff_eq_take.mp <| List.prefix_of_s_prefix this
+  rw [take_of_pow] at this
+  · exact this
+  · rw [add_mul, one_mul]
+    nth_rewrite 1 [hwl]
+    simpa only [add_le_add_iff_left] using
+      Nat.le_of_lt <| Nat.mod_lt (length w) <| List.length_pos.mpr hr
+
+
 end Periodic
 
 

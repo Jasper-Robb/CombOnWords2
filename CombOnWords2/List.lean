@@ -66,6 +66,13 @@ theorem prefix_append_of_prefix {l₁ l₂ : List α} (l₃ : List α) (h : l₁
   exists t ++ l₃
   rw [← append_assoc, ht]
 
+theorem prefix_of_prefix_append {l₁ l₂ l₃ : List α} (h₁ : l₂ <+: l₁ ++ l₃) (h₂ : l₁.length ≤ l₂.length)
+    : l₁ <+: l₂ := by
+  obtain ⟨t, ht⟩ := h₁
+  have := congrArg (take l₁.length) ht.symm
+  simp only [take_left, take_append_of_le_length h₂] at this
+  exact prefix_iff_eq_take.mpr this
+
 
 theorem eq_take_iff {l1 : List α} (l2 : List α) {k : ℕ} (h : k ≤ l1.length)
     : l2 = l1.take k ↔ l2 <+: l1 ∧ l2.length = k := by
@@ -162,6 +169,13 @@ theorem s_prefix_of_append {l₁ : List α} (l₂ : List α) (h : l₁ ≠ [])
     : l₂ <<+: l₂ ++ l₁ :=
   ⟨l₁, h, rfl⟩
 
+theorem s_prefix_of_s_prefix_append {l₁ l₂ l₃ : List α} (h₁ : l₂ <<+: l₁ ++ l₃)
+    (h₂ : l₁.length < l₂.length) : l₁ <<+: l₂ :=
+  (IsStrictPrefix.iff_prefix_len_lt l₁ l₂).mpr ⟨prefix_of_prefix_append
+    (((IsStrictPrefix.iff_prefix_len_lt l₂ (l₁ ++ l₃)).mp h₁).left) <| Nat.le_of_lt h₂, h₂⟩
+
+theorem prefix_of_s_prefix {l₁ l₂ : List α} : l₁ <<+: l₂ → l₁ <+: l₂ :=
+  fun ⟨t, _, htr⟩ ↦ ⟨t, htr⟩
 
 theorem spx_of_px_of_spx {l₁ l₂ l₃ : List α} (h₁ : l₁ <+: l₂) (h₂ : l₂ <<+: l₃)
     : l₁ <<+: l₃ := by
