@@ -15,7 +15,7 @@ theorem mem_infixes (s t : List α) : s ∈ t.infixes ↔ s <:+: t := by
   · intro h
     rcases mem_cons.mp h with ⟨s, hsl⟩ | hsr
     · exists []
-      exact ⟨nil_prefix [], nil_suffix t⟩ 
+      exact ⟨nil_prefix [], nil_suffix t⟩
     · obtain ⟨a, hal, har⟩ := mem_join.mp hsr
       obtain ⟨b, hbl, hbr⟩ := mem_map.mp hal
       exists b
@@ -60,17 +60,24 @@ theorem reverse_take_one (l : List α) : (l.take 1).reverse = l.take 1 := by
     rfl
 
 
+theorem prefix_append_of_prefix {l1 l2 : List α} (l3 : List α) (h : l1 <+: l2)
+    : l1 <+: l2 ++ l3 := by
+  obtain ⟨t, ht⟩ := h
+  exists t ++ l3
+  rw [← append_assoc, ht]
+
+
 theorem getLast_if_all (p : α → Prop) (l : List α) (hl : l ≠ []) : (∀ x ∈ l, p x) → p (l.getLast hl) :=
   (· (List.getLast l hl) (List.getLast_mem hl))
 
-theorem elem_sort_iff_elem (l : List α) (x : α) (r : α → α → Prop) [DecidableRel r] 
+theorem elem_sort_iff_elem (l : List α) (x : α) (r : α → α → Prop) [DecidableRel r]
     : x ∈ l.insertionSort r ↔ x ∈ l :=
   List.Perm.mem_iff (List.perm_insertionSort r l)
 
 theorem ne_nil_iff_exists_elem (l : List α) : l ≠ [] ↔ ∃ x, x ∈ l :=
   ⟨List.exists_mem_of_ne_nil l, fun ⟨_, hx⟩ => List.ne_nil_of_mem hx⟩
 
-theorem filter_ne_nil_iff_elem (p : α → Prop) [DecidablePred p] (l : List α) 
+theorem filter_ne_nil_iff_elem (p : α → Prop) [DecidablePred p] (l : List α)
     : (∃ x ∈ l, p x) ↔ l.filter p ≠ [] := by
   simp only [ne_nil_iff_exists_elem, List.mem_filter, decide_eq_true_eq]
 
@@ -93,7 +100,7 @@ infixl:50 " <<:+: " => IsStrictInfix
 namespace IsStrictPrefix
 
 
-theorem iff_prefix_len_lt (l₁ l₂ : List α) 
+theorem iff_prefix_len_lt (l₁ l₂ : List α)
     : l₁ <<+: l₂ ↔ l₁ <+: l₂ ∧ l₁.length < l₂.length := by
   constructor
   · intro ⟨t, htl, htr⟩
@@ -108,13 +115,13 @@ theorem iff_prefix_len_lt (l₁ l₂ : List α)
       exact length_pos.mp (Nat.pos_of_lt_add_right h)
     · exact ht
 
-theorem iff_prefix_ne (l₁ l₂ : List α) 
+theorem iff_prefix_ne (l₁ l₂ : List α)
     : l₁ <<+: l₂ ↔ l₁ <+: l₂ ∧ l₁ ≠ l₂ := by
   constructor
   · intro ⟨t, htl, htr⟩
     constructor
     · exact ⟨t, htr⟩
-    · suffices l₁.length ≠ l₂.length by exact this ∘ (congrArg length) 
+    · suffices l₁.length ≠ l₂.length by exact this ∘ (congrArg length)
       rw [← htr, length_append]
       exact Nat.ne_of_lt (Nat.lt_add_of_pos_right (length_pos.mpr htl))
   · exact fun ⟨⟨t, ht⟩, h⟩ ↦ ⟨t, ⟨fun hc ↦ h (by rw [← ht, hc, append_nil]), ht⟩⟩

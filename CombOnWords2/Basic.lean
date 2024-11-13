@@ -62,12 +62,18 @@ def length.unexpander : Lean.PrettyPrinter.Unexpander
 
 
 @[freemonoid_to_list]
-theorem length_eq_list_length (w : FreeMonoid α) : w.length = List.length w :=
+theorem length_eq_list_length (w : FreeMonoid α) : |w| = List.length w :=
   rfl
 
 @[simp]
-theorem length_mul (u v : FreeMonoid α) : (u * v).length = u.length + v.length :=
+theorem length_mul (u v : FreeMonoid α) : |u * v| = |u| + |v| :=
   List.length_append u v
+
+@[simp]
+theorem length_pow (u : FreeMonoid α) (k : ℕ) : |u ^ k| = k * |u| := by
+  induction k with
+  | zero => simp only [Nat.zero_eq, pow_zero, zero_mul]; rfl
+  | succ k' ih => simp [pow_succ, ih, Nat.add_comm u.length, Nat.succ_mul]
 
 
 @[freemonoid_to_list]
@@ -381,6 +387,21 @@ theorem mem_infixes (u v : FreeMonoid α) : u ∈ v.infixes ↔ u ≤ᵢ v :=
   List.mem_infixes u v
 
 
+theorem pow_prefix_pow (w : FreeMonoid α) {k n : ℕ} (h : k ≤ n)
+    : w^k ≤ₚ w^n := by
+  rw [(Nat.sub_eq_iff_eq_add' h).mp rfl]
+  simp [pow_add, freemonoid_to_list]
+
+theorem pow_take_prefix_pow (w : FreeMonoid α) {k m n : ℕ} (h : k < n)
+    : w^k * w.take m ≤ₚ w^n := by
+  rw [(Nat.sub_eq_iff_eq_add' (Nat.le_of_lt h)).mp rfl]
+  simp only [take, mul_eq_list_append, toList', pow_add, is_prefix_iff_list_is_prefix,
+             List.prefix_append_right_inj]
+  rw [(Nat.sub_eq_iff_eq_add' (Nat.sub_pos_of_lt h)).mp rfl, pow_add, pow_one]
+  suffices List.take m w <+: w by exact List.prefix_append_of_prefix _ this
+  exact List.take_prefix m w
+
+
 end Infix -- Close section
 
 
@@ -388,12 +409,36 @@ section Border
 
 
 def Border (b w : FreeMonoid α) : Prop :=
-  b ≤ᵢ w ∧ b ≤ₛ w ∧ b ≠ w ∧ b ≠ 1
+  b ≤ₚ w ∧ b ≤ₛ w ∧ b ≠ w ∧ b ≠ 1
 
 infixl:50 " <b " => Border
 
 instance [DecidableEq α] {b w : FreeMonoid α} : Decidable (b <b w) :=
   And.decidable
+
+
+theorem ne_nil_of_bordered {b w : FreeMonoid α} : b <b w → w ≠ 1 :=
+  fun ⟨h1, _, _, h4⟩ ↦ List.length_pos.mp <| Nat.lt_of_lt_of_le
+    (List.length_pos.mpr h4) (List.length_le_of_sublist (List.IsPrefix.sublist h1))
+
+theorem border_congr {b w : FreeMonoid α} (h : b <b w) (f : FreeMonoid α →* FreeMonoid β)
+    [hf : IsNonErasing f] : (f b) <b (f w) := by
+  obtain ⟨h1, h2, h3, h4⟩ := h
+  apply And.intro <;> try apply And.intro <;> try apply And.intro
+  · exact is_prefix_congr h1 f
+  · exact is_suffix_congr h2 f
+  · obtain ⟨s, hs⟩ := h1
+    rw [← hs, map_mul, ne_eq, self_eq_mul_right]
+    intro hfs
+    suffices s ≠ 1 by exact (non_erasing_nil this f) hfs
+    intro hs'
+    simp only [hs', mul_one] at hs
+    contradiction
+  · exact non_erasing_nil h4 f
+
+theorem border_reverse {b w : FreeMonoid α} : b <b w → b.reverse <b w.reverse :=
+  fun ⟨h1, h2, h3, h4⟩ ↦ ⟨List.reverse_prefix.mpr h2, List.reverse_suffix.mpr h1,
+    fun hc ↦ h3 <| List.reverse_injective hc, fun hc ↦ h4 <| List.reverse_eq_nil_iff.mp hc⟩
 
 
 end Border
