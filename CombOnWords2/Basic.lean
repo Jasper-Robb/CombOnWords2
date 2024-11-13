@@ -387,21 +387,6 @@ theorem mem_infixes (u v : FreeMonoid α) : u ∈ v.infixes ↔ u ≤ᵢ v :=
   List.mem_infixes u v
 
 
-theorem pow_prefix_pow (w : FreeMonoid α) {k n : ℕ} (h : k ≤ n)
-    : w^k ≤ₚ w^n := by
-  rw [(Nat.sub_eq_iff_eq_add' h).mp rfl]
-  simp [pow_add, freemonoid_to_list]
-
-theorem pow_take_prefix_pow (w : FreeMonoid α) {k m n : ℕ} (h : k < n)
-    : w^k * w.take m ≤ₚ w^n := by
-  rw [(Nat.sub_eq_iff_eq_add' (Nat.le_of_lt h)).mp rfl]
-  simp only [take, mul_eq_list_append, toList', pow_add, is_prefix_iff_list_is_prefix,
-             List.prefix_append_right_inj]
-  rw [(Nat.sub_eq_iff_eq_add' (Nat.sub_pos_of_lt h)).mp rfl, pow_add, pow_one]
-  suffices List.take m w <+: w by exact List.prefix_append_of_prefix _ this
-  exact List.take_prefix m w
-
-
 end Infix -- Close section
 
 
@@ -442,6 +427,53 @@ theorem border_reverse {b w : FreeMonoid α} : b <b w → b.reverse <b w.reverse
 
 
 end Border
+
+
+section Periodic
+
+
+theorem pow_prefix_pow (w : FreeMonoid α) {k n : ℕ} (h : k ≤ n)
+    : w^k ≤ₚ w^n := by
+  rw [(Nat.sub_eq_iff_eq_add' h).mp rfl]
+  simp [pow_add, freemonoid_to_list]
+
+theorem pow_mul_take_prefix_pow (w : FreeMonoid α) {k m n : ℕ} (h : k < n)
+    : w^k * w.take m ≤ₚ w^n := by
+  rw [(Nat.sub_eq_iff_eq_add' (Nat.le_of_lt h)).mp rfl]
+  simp only [take, mul_eq_list_append, toList', pow_add, is_prefix_iff_list_is_prefix,
+             List.prefix_append_right_inj]
+  rw [(Nat.sub_eq_iff_eq_add' (Nat.sub_pos_of_lt h)).mp rfl, pow_add, pow_one]
+  suffices List.take m w <+: w by exact List.prefix_append_of_prefix _ this
+  exact List.take_prefix m w
+
+theorem take_of_pow {r : FreeMonoid α} {n k : ℕ} (h : k ≤ n * |r|)
+    : (r^n).take k = r^(k / |r|) * r.take (k % |r|) := by
+  cases Nat.eq_zero_or_pos |r| with
+  | inl hr =>
+    simp only [show r = 1 from List.length_eq_zero.mp hr, one_pow, one_mul]
+    simp [freemonoid_to_list]
+  | inr hr =>
+    rw [← length_pow] at h
+    apply ((List.eq_take_iff _ h).mpr _).symm
+    rw [length_pow] at h
+    constructor
+    · rw [← is_prefix_iff_list_is_prefix]
+      cases Nat.eq_or_lt_of_le h with
+      | inl h' =>
+        have : k % |r| = 0 := by
+          rw [h']
+          exact Nat.mul_mod_left n (length r)
+        rw [Nat.div_eq_of_eq_mul_left hr h', this]
+        simpa [freemonoid_to_list] using List.prefix_rfl
+      | inr h' => exact pow_mul_take_prefix_pow _ <| (Nat.div_lt_iff_lt_mul hr).mpr h'
+    · simp only [← length_eq_list_length, length_mul, length_pow]
+      simp only [length_eq_list_length, take]
+      rw [List.length_take_of_le]
+      · exact Nat.div_add_mod' k (List.length r)
+      · exact Nat.le_of_lt <| Nat.mod_lt k hr
+
+
+end Periodic
 
 
 section Overlap

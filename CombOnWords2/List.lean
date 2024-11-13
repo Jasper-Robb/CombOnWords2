@@ -67,6 +67,16 @@ theorem prefix_append_of_prefix {l₁ l₂ : List α} (l₃ : List α) (h : l₁
   rw [← append_assoc, ht]
 
 
+theorem eq_take_iff {l1 : List α} (l2 : List α) {k : ℕ} (h : k ≤ l1.length)
+    : l2 = l1.take k ↔ l2 <+: l1 ∧ l2.length = k := by
+  constructor
+  · intro h2
+    rw [h2]
+    exact ⟨take_prefix k l1, length_take_of_le h⟩
+  · intro ⟨⟨t, ht⟩, h2⟩
+    rw [← ht, take_left' h2]
+
+
 theorem getLast_if_all (p : α → Prop) (l : List α) (hl : l ≠ []) : (∀ x ∈ l, p x) → p (l.getLast hl) :=
   (· (List.getLast l hl) (List.getLast_mem hl))
 
