@@ -2,12 +2,13 @@ import CombOnWords2.Decidable
 import Mathlib.Tactic.FinCases
 import Mathlib.Data.Nat.Parity
 import Mathlib.Data.Nat.Digits
+import CombOnWords2.Streda
 
 
 open FreeMonoid
 
 
-variable {α β : Type*} [Fintype α] [Fintype β] 
+variable {α β : Type*} [Fintype α] [Fintype β]
 
 
 def toFinFreeMonoid (n : ℕ) (l : List (Fin n)) : FreeMonoid (Fin n) := l
@@ -27,13 +28,13 @@ theorem chapter1_question2 (u : FreeMonoid α) (hu : Overlap u)
 
 
 theorem chapter1_question3 (u : FreeMonoid α) (hu : Overlap u)
-    : (∃ (x : FreeMonoid α), 0 < |x| ∧ u = x * x * x) ∨ 
+    : (∃ (x : FreeMonoid α), 0 < |x| ∧ u = x * x * x) ∨
       (∃ (x y : FreeMonoid α), 0 < |x| ∧ 0 < |y| ∧ u = x * y * x * y * x) := by
   obtain ⟨B, hBl, hBr⟩ := hu
   cases eq_or_ne |B| 1 with
-  | inl h => 
+  | inl h =>
     left
-    exists B 
+    exists B
     exact ⟨hBl, by simpa [hBr] using List.take_length_le <| Nat.le_of_eq h⟩
   | inr h =>
     right
@@ -45,7 +46,7 @@ theorem chapter1_question3 (u : FreeMonoid α) (hu : Overlap u)
       simpa only [freemonoid_to_list, List.take_append_drop]
 
 
-def μ : Monoid.End (FreeMonoid (Fin 2)) := 
+def μ : Monoid.End (FreeMonoid (Fin 2)) :=
   bind fun x ↦ [x, 1 - x]
 
 theorem μ_nonerasing : NonErasing μ :=
@@ -95,8 +96,8 @@ theorem nil_in_allFreeMonoidsMaxLength (n : ℕ) (hn : 0 < n) : [] ∈ allFreeMo
     apply mem_allFreeMonoidsMaxLength
     simp [freemonoid_to_list]
 
-def lengthLe (fm₁ fm₂ : FreeMonoid α) : Prop := 
-  |fm₁| ≤ |fm₂| 
+def lengthLe (fm₁ fm₂ : FreeMonoid α) : Prop :=
+  |fm₁| ≤ |fm₂|
 
 instance : @DecidableRel (FreeMonoid α) lengthLe :=
   fun (fm₁ fm₂ : FreeMonoid α) ↦ Nat.decLe |fm₁| |fm₂|
@@ -107,7 +108,7 @@ instance : IsTotal (FreeMonoid α) lengthLe :=
 instance : IsTrans (FreeMonoid α) lengthLe :=
   ⟨fun _ _ _ ↦ Nat.le_trans⟩
 
-theorem exists_longest_μ_infix (w : FreeMonoid (Fin 2)) 
+theorem exists_longest_μ_infix (w : FreeMonoid (Fin 2))
     : ∃ v, μ v <:*: w ∧ ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w := by
   let l := List.insertionSort lengthLe
     (List.filter (μ · <:*: w)
@@ -124,7 +125,7 @@ theorem exists_longest_μ_infix (w : FreeMonoid (Fin 2))
     have := List.of_mem_filter hx
     exact of_decide_eq_true this
   · intro fm hfm hfm2
-    have : |fm| ≤ |w| := 
+    have : |fm| ≤ |w| :=
       Nat.le_trans (nonerasing_iff.mp μ_nonerasing fm) (List.IsInfix.length_le hfm2)
     have : fm ∈ l := by
       rw [List.elem_sort_iff_elem, List.mem_filter, Multiset.mem_toList]
@@ -155,7 +156,7 @@ theorem claim2₁ {u v z w : FreeMonoid (Fin 2)} (hv : ∀ v₂ : FreeMonoid (Fi
     exact hv (of x * v) (Nat.lt.base |v|) ⟨s, z, this.symm⟩
   exact calc
     w = u * μ v * z            := by exact h.symm
-    _ = s * μ (of x) * μ v * z := by rw [← hs] 
+    _ = s * μ (of x) * μ v * z := by rw [← hs]
     _ = s * μ (of x * v) * z   := by conv => lhs; lhs; rw [mul_assoc, ← map_mul]
 
 theorem claim2₂ {u v z w : FreeMonoid (Fin 2)} (hv : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w)
@@ -165,19 +166,19 @@ theorem claim2₂ {u v z w : FreeMonoid (Fin 2)} (hv : ∀ v₂ : FreeMonoid (Fi
     exact hv (v * of x) (by simp [freemonoid_to_list]) ⟨u, t, this.symm⟩
   exact calc
     w = u * μ v * z            := by exact h.symm
-    _ = u * μ v * μ (of x) * t := by rw [← ht, ← mul_assoc] 
+    _ = u * μ v * μ (of x) * t := by rw [← ht, ← mul_assoc]
     _ = u * μ (v * of x) * t   := by conv => lhs; lhs; rw [mul_assoc, ← map_mul]
 
 theorem claim3₁ {u v z w : FreeMonoid (Fin 2)} (hw₁ : ¬HasOverlap w) (hw₂ : u * μ v * z = w)
     (hv₁ : ∀ v₂ : FreeMonoid (Fin 2), |v| < |v₂| → ¬μ v₂ <:*: w) (hv₂ : 1 < |v|) : |u| < 3 := by
   by_contra hu₁
   rw [Nat.not_lt, ← Nat.lt_succ] at hu₁
-  have hc₁ : ¬HasOverlap (u.rtake 3) := by 
+  have hc₁ : ¬HasOverlap (u.rtake 3) := by
     refine factor_no_overlap_of_no_overlap ?_ hw₁
     exists u.rdrop 3, μ v * z
     simp only [freemonoid_to_list, List.append_assoc] at hw₂
     simpa only [freemonoid_to_list, List.rdrop_append_rtake]
-  have hc₂ : ∀ x : Fin 2, ¬μ (of x) <:* (u.rtake 3) := 
+  have hc₂ : ∀ x : Fin 2, ¬μ (of x) <:* (u.rtake 3) :=
     fun x hxu ↦ claim2₁ hv₁ hw₂ x <| List.IsSuffix.trans hxu <| List.rtake_suffix 3 u
   have hc₃ : ¬HasOverlap (u.rtake 3 * μ (v.take 2)) := by
     refine factor_no_overlap_of_no_overlap ?_ hw₁
@@ -185,7 +186,7 @@ theorem claim3₁ {u v z w : FreeMonoid (Fin 2)} (hw₁ : ¬HasOverlap w) (hw₂
     simp only [← mul_assoc]
     conv => lhs; lhs; rw [mul_assoc, ← map_mul]
     simpa only [freemonoid_to_list, List.rdrop_append_rtake, List.take_append_drop]
-  have hu₂ : u.rtake 3 ∈ [[0,0,0],[0,0,1],[0,1,0],[0,1,1],[1,0,0],[1,0,1],[1,1,0],[1,1,1]] := 
+  have hu₂ : u.rtake 3 ∈ [[0,0,0],[0,0,1],[0,1,0],[0,1,1],[1,0,0],[1,0,1],[1,1,0],[1,1,1]] :=
     mem_allFreeMonoidsOfLength 3 (u.rtake 3) <| List.length_rtake_of_le <| Nat.lt_succ.mp hu₁
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hu₂
   have hv₃ : v.take 2 ∈ [[0,0],[0,1],[1,0],[1,1]] :=
@@ -219,8 +220,8 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
   cases Nat.lt_or_ge |w| 6 with
   | inl hlw =>
     revert w
-    conv => 
-      intro w; rw [forall_comm]; intro h1 h2; rhs; intro u; rhs; rhs; intro z; rhs; rhs; intro v; lhs; 
+    conv =>
+      intro w; rw [forall_comm]; intro h1 h2; rhs; intro u; rhs; rhs; intro z; rhs; rhs; intro v; lhs;
       rw [show w = u * μ v * z ↔ μ v <:*: w ∧ w = u * μ v * z from ⟨fun h ↦ ⟨⟨u, z, h.symm⟩, h⟩, And.right⟩]
     simp only [and_assoc]
     decide
@@ -228,7 +229,7 @@ theorem chapter1_question5 (w : FreeMonoid (Fin 2)) (hw : ¬HasOverlap w)
     obtain ⟨v, hvl, hvr⟩ := exists_longest_μ_infix w
     have hlv : 1 < |v| := by
       by_contra hvnl
-      rw [not_lt] at hvnl 
+      rw [not_lt] at hvnl
       obtain ⟨v', hvl', hvr'⟩ := claim1 hlw hw
       exact hvr v' (Nat.lt_of_le_of_lt hvnl hvr') hvl'
     have hvno : ¬HasOverlap v := factor_no_overlap_of_no_overlap hvl hw ∘ (chapter1_question4 v)
@@ -260,11 +261,10 @@ theorem μ_pow_complement (k : ℕ) (fm : FreeMonoid (Fin 2))
 theorem chapter1_question7 (n : ℕ) : (μ^n : Monoid.End _) [0] = X n := by
   induction n with
   | zero => rfl
-  | succ k ih => exact calc 
+  | succ k ih => exact calc
     (μ^k.succ) [0] = (μ^k) (μ [0])               := by rw [pow_succ']; rfl
                  _ = (μ^k) (2 $↑ [0] * 2 $↑ [1]) := by rfl
                  _ = (μ^k) [0] * (μ^k) (~[0])    := by rw [map_mul]; rfl
                  _ = (μ^k) [0] * ~(μ^k) [0]      := by rw [μ_pow_complement]
                  _ = X k * ~X k                  := by rw [ih]
                  _ = X k.succ                    := by rfl
-
